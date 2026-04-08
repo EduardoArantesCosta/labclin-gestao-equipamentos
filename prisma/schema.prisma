@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StatusOperacional {
+  AGUARDANDO_CALIBRACAO
+  EM_CALIBRACAO
+  DISPONIVEL
+  EM_USO
+}
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  senha     String
+  createdAt DateTime @default(now())
+
+  @@map("usuarios")
+}
+
+model TipoEquipamento {
+  id           Int           @id @default(autoincrement())
+  nome         String        @unique
+  ativo        Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  equipamentos Equipamento[]
+
+  @@map("tipos_equipamento")
+}
+
+model Marca {
+  id           Int           @id @default(autoincrement())
+  nome         String        @unique
+  ativo        Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  equipamentos Equipamento[]
+
+  @@map("marcas")
+}
+
+model IntervaloCalibracao {
+  id           Int           @id @default(autoincrement())
+  nome         String        @unique
+  dias         Int?
+  ativo        Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  equipamentos Equipamento[]
+
+  @@map("intervalos_calibracao")
+}
+
+model EmpresaCalibracao {
+  id           Int          @id @default(autoincrement())
+  nome         String       @unique
+  contato      String?
+  ativo        Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  calibracoes  Calibracao[]
+
+  @@map("empresas_calibracao")
+}
+
+model Equipamento {
+  id                Int                 @id @default(autoincrement())
+  codigo            String              @unique
+  numeroSerie       String?
+  localizacao       String?
+  observacao        String?
+  statusOperacional StatusOperacional   @default(AGUARDANDO_CALIBRACAO)
+  ativo             Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+
+  tipoId            Int
+  marcaId           Int
+  intervaloId       Int
+
+  tipo              TipoEquipamento     @relation(fields: [tipoId], references: [id])
+  marca             Marca               @relation(fields: [marcaId], references: [id])
+  intervalo         IntervaloCalibracao @relation(fields: [intervaloId], references: [id])
+  calibracoes       Calibracao[]
+  historicosStatus  HistoricoStatus[]
+
+  @@map("equipamentos")
+}
+
+model Calibracao {
+  id                Int                @id @default(autoincrement())
+  dataCalibracao    DateTime
+  dataValidade      DateTime
+  numeroCertificado String             @unique
+  createdAt         DateTime           @default(now())
+
+  equipamentoId     Int
+  empresaId         Int
+
+  equipamento       Equipamento        @relation(fields: [equipamentoId], references: [id])
+  empresa           EmpresaCalibracao  @relation(fields: [empresaId], references: [id])
+
+  @@map("calibracoes")
+}
+
+model HistoricoStatus {
+  id             Int               @id @default(autoincrement())
+  statusAnterior StatusOperacional?
+  statusNovo     StatusOperacional
+  dataAlteracao  DateTime          @default(now())
+
+  equipamentoId  Int
+  equipamento    Equipamento       @relation(fields: [equipamentoId], references: [id])
+
+  @@map("historicos_status")
+}
