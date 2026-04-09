@@ -1,0 +1,118 @@
+import { prisma } from "../../../lib/prisma";
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  try {
+    const equipamentos = await prisma.equipamento.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        tipo: true,
+        marca: true,
+        intervalo: true,
+      },
+    });
+
+    return NextResponse.json(equipamentos);
+  } catch (error) {
+    console.error("Erro ao buscar equipamentos:", error);
+
+    return NextResponse.json({ message: "Erro interno do servidor" }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    const codigo = body.codigo?.trim();
+    const numeroSerie = body.numeroSerie?.trim() || null;
+    const localizacao = body.localizacao?.trim() || null;
+    const observacao = body.observacao?.trim() || null;
+
+    const tipoId = Number(body.tipoId);
+    const marcaId = Number(body.marcaId);
+    const intervaloId = Number(body.intervaloId);
+
+    if (!numeroSerie) {
+      return Response.json({ message: "Número de série é obrigatório" }, { status: 400 });
+    }
+    if (!localizacao) {
+      return Response.json({ message: "Localização é obrigatória" }, { status: 400 });
+    }
+    if (!codigo) {
+      return Response.json({ message: "Código é obrigatório" }, { status: 400 });
+    }
+
+    if (isNaN(tipoId)) {
+      return Response.json({ message: "tipoId inválido" }, { status: 400 });
+    }
+
+    if (isNaN(marcaId)) {
+      return Response.json({ message: "marcaId inválido" }, { status: 400 });
+    }
+
+    if (isNaN(intervaloId)) {
+      return Response.json({ message: "intervaloId inválido" }, { status: 400 });
+    }
+
+    const equipamentoExistente = await prisma.equipamento.findUnique({
+      where: { codigo },
+    });
+
+    if (equipamentoExistente) {
+      return Response.json(
+        { message: "Já existe um equipamento com esse código" },
+        { status: 409 },
+      );
+    }
+
+    const tipoExiste = await prisma.tipoEquipamento.findUnique({
+      where: { id: tipoId },
+    });
+
+    if (!tipoExiste) {
+      return Response.json({ message: "Tipo de equipamento não encontrado" }, { status: 404 });
+    }
+
+    const marcaExiste = await prisma.marca.findUnique({
+      where: { id: marcaId },
+    });
+
+    if (!marcaExiste) {
+      return Response.json({ message: "Marca não encontrada" }, { status: 404 });
+    }
+
+    const intervaloExiste = await prisma.intervaloCalibracao.findUnique({
+      where: { id: intervaloId },
+    });
+
+    if (!intervaloExiste) {
+      return Response.json({ message: "Intervalo de calibração não encontrado" }, { status: 404 });
+    }
+
+    const novoEquipamento = await prisma.equipamento.create({
+      data: {
+        codigo,
+        numeroSerie,
+        localizacao,
+        observacao,
+        tipoId,
+        marcaId,
+        intervaloId,
+      },
+      include: {
+        tipo: true,
+        marca: true,
+        intervalo: true,
+      },
+    });
+
+    return Response.json(novoEquipamento, { status: 201 });
+  } catch (error) {
+    console.error("Erro ao criar equipamento:", error);
+
+    return Response.json({ message: "Erro interno do servidor" }, { status: 500 });
+  }
+}
