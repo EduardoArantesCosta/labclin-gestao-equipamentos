@@ -79,21 +79,43 @@ export async function POST(request: Request) {
       return Response.json({ message: "Empresa de calibração não encontrada" }, { status: 404 });
     }
 
-    const novaCalibracao = await prisma.calibracao.create({
-      data: {
-        dataCalibracao: new Date(dataCalibracao),
-        dataValidade: new Date(dataValidade),
-        numeroCertificado,
-        equipamentoId,
-        empresaId,
-      },
-      include: {
-        equipamento: true,
-        empresa: true,
-      },
+    const resultado = await prisma.$transaction(async (tx) => {
+      const novaCalibracao = await tx.calibracao.create({
+        data: {
+          dataCalibracao: new Date(dataCalibracao),
+          dataValidade: new Date(dataValidade),
+          numeroCertificado,
+          equipamentoId,
+          empresaId,
+        },
+        include: {
+          equipamento: true,
+          empresa: true,
+        },
+      });
+
+      const statusAnterior = equipamentoExiste.statusOperacional;
+      const statusNovo = "DISPONIVEL";
+
+      await tx.equipamento.update({
+        where: { id: equipamentoId },
+        data: {
+          statusOperacional: statusNovo,
+        },
+      });
+
+      await tx.historicoStatus.create({
+        data: {
+          statusAnterior,
+          statusNovo,
+          equipamentoId,
+        },
+      });
+
+      return novaCalibracao;
     });
 
-    return Response.json(novaCalibracao, { status: 201 });
+    return Response.json(resultado, { status: 201 });
   } catch (error) {
     console.error("Erro ao criar calibração:", error);
 

@@ -11,10 +11,50 @@ export async function GET() {
         tipo: true,
         marca: true,
         intervalo: true,
+        calibracoes: {
+          orderBy: {
+            dataValidade: "desc",
+          },
+          take: 1,
+        },
       },
     });
 
-    return NextResponse.json(equipamentos);
+    const equipamentosComSituacao = equipamentos.map((equipamento) => {
+      const ultimaCalibracao = equipamento.calibracoes[0];
+      const hoje = new Date();
+
+      let situacao = "OK";
+
+      if (equipamento.statusOperacional === "EM_CALIBRACAO") {
+        situacao = "EM_CALIBRACAO";
+      } else if (!ultimaCalibracao) {
+        situacao = "VENCIDO";
+      } else {
+        const dataValidade = new Date(ultimaCalibracao.dataValidade);
+
+        if (dataValidade < hoje) {
+          situacao = "VENCIDO";
+        } else {
+          const diferencaEmMs = dataValidade.getTime() - hoje.getTime();
+          const diferencaEmDias = Math.ceil(diferencaEmMs / (1000 * 60 * 60 * 24));
+
+          if (diferencaEmDias <= 30) {
+            situacao = "PROXIMO_DO_VENCIMENTO";
+          } else {
+            situacao = "OK";
+          }
+        }
+      }
+
+      return {
+        ...equipamento,
+        situacao,
+        ultimaCalibracao: ultimaCalibracao || null,
+      };
+    });
+
+    return NextResponse.json(equipamentosComSituacao);
   } catch (error) {
     console.error("Erro ao buscar equipamentos:", error);
 

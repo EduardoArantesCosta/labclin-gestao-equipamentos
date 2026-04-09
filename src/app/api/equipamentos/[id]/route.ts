@@ -22,8 +22,16 @@ export async function GET(_: Request, { params }: Params) {
         tipo: true,
         marca: true,
         intervalo: true,
-        calibracoes: true,
-        historicosStatus: true,
+        calibracoes: {
+          orderBy: {
+            dataValidade: "desc",
+          },
+        },
+        historicosStatus: {
+          orderBy: {
+            dataAlteracao: "desc",
+          },
+        },
       },
     });
 
@@ -31,7 +39,39 @@ export async function GET(_: Request, { params }: Params) {
       return NextResponse.json({ message: "Equipamento não encontrado" }, { status: 404 });
     }
 
-    return NextResponse.json(equipamento);
+    const ultimaCalibracao = equipamento.calibracoes[0] || null;
+    const hoje = new Date();
+
+    let situacao = "OK";
+
+    if (equipamento.statusOperacional === "EM_CALIBRACAO") {
+      situacao = "EM_CALIBRACAO";
+    } else if (!ultimaCalibracao) {
+      situacao = "VENCIDO";
+    } else {
+      const dataValidade = new Date(ultimaCalibracao.dataValidade);
+
+      if (dataValidade < hoje) {
+        situacao = "VENCIDO";
+      } else {
+        const diferencaEmMs = dataValidade.getTime() - hoje.getTime();
+        const diferencaEmDias = Math.ceil(diferencaEmMs / (1000 * 60 * 60 * 24));
+
+        if (diferencaEmDias <= 30) {
+          situacao = "PROXIMO_DO_VENCIMENTO";
+        } else {
+          situacao = "OK";
+        }
+      }
+    }
+
+    const equipamentoComSituacao = {
+      ...equipamento,
+      situacao,
+      ultimaCalibracao,
+    };
+
+    return NextResponse.json(equipamentoComSituacao);
   } catch (error) {
     console.error("Erro ao buscar equipamento:", error);
 
