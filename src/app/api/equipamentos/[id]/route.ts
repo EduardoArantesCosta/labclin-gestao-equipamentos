@@ -60,7 +60,7 @@ export async function GET(_: Request, { params }: Params) {
         if (diferencaEmDias <= 30) {
           situacao = "PROXIMO_DO_VENCIMENTO";
         } else {
-          situacao = "OK";
+          situacao = "CALIBRADO";
         }
       }
     }

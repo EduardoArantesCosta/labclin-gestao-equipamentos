@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type TipoEquipamento = {
   id: number;
   nome: string;
@@ -113,25 +115,14 @@ export default async function EquipamentosPage() {
         <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 bg-slate-50 px-8 py-6">
             <div className="flex flex-col gap-2">
-              <span className="text-2xl font-bold tracking-[0.2em] text-[#523178] uppercase">
-                LABORCLIN
-              </span>
-
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              <h1 className="text-center text-3xl font-bold tracking-tight text-slate-900">
                 Gestão de Equipamentos
               </h1>
             </div>
           </div>
 
           <div className="px-8 py-6">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-800">Equipamentos cadastrados</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Visualização geral dos equipamentos monitorados no sistema.
-                </p>
-              </div>
-            </div>
+            <div className="mb-4 flex items-center justify-between"></div>
 
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
               <div className="overflow-x-auto">
@@ -161,7 +152,12 @@ export default async function EquipamentosPage() {
 
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {equipamentosOrdenados.map((equipamento) => (
-                      <tr key={equipamento.id} className="transition-colors hover:bg-slate-50">
+                      <tr
+                        key={equipamento.id}
+                        className={`transition-colors hover:bg-slate-50 ${
+                          equipamento.situacao === "VENCIDO" ? "bg-red-50" : ""
+                        }`}
+                      >
                         <td className="px-6 py-4 text-sm font-semibold text-slate-900">
                           {equipamento.codigo}
                         </td>
@@ -190,26 +186,26 @@ export default async function EquipamentosPage() {
 
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <button
-                              type="button"
+                            <Link
+                              href={`/equipamentos/${equipamento.id}`}
                               className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                             >
                               Ver
-                            </button>
+                            </Link>
 
-                            <button
-                              type="button"
+                            <Link
+                              href={`/equipamentos/${equipamento.id}/editar`}
                               className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                             >
                               Editar
-                            </button>
+                            </Link>
 
-                            <button
-                              type="button"
+                            <Link
+                              href={`/equipamentos/${equipamento.id}/calibracoes/nova`}
                               className="rounded-lg border border-[#7D55C7] bg-[#7D55C7] px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90"
                             >
                               Calibração
-                            </button>
+                            </Link>
                           </div>
                         </td>
                       </tr>

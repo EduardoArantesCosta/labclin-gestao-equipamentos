@@ -1,19 +1,19 @@
-import type { Metadata } from "next";
 import "./globals.css";
+import { ReactNode } from "react";
 
-export const metadata: Metadata = {
-  title: "LABORCLIN Gestão de Equipamentos",
-  description: "Sistema interno para controle de equipamentos e calibrações",
+export const metadata = {
+  title: "LABORCLIN",
+  description: "Sistema de gestão de equipamentos",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+type RootLayoutProps = {
+  children: ReactNode;
+};
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="pt-BR">
-      <body className="min-h-screen bg-slate-100 text-slate-900 antialiased">{children}</body>
+      <body>{children}</body>
     </html>
   );
 }

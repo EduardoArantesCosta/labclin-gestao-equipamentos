@@ -42,7 +42,7 @@ export async function GET() {
           if (diferencaEmDias <= 30) {
             situacao = "PROXIMO_DO_VENCIMENTO";
           } else {
-            situacao = "OK";
+            situacao = "CALIBRADO";
           }
         }
       }
@@ -67,8 +67,8 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const codigo = body.codigo?.trim();
-    const numeroSerie = body.numeroSerie?.trim() || null;
-    const localizacao = body.localizacao?.trim() || null;
+    const numeroSerie = body.numeroSerie?.trim();
+    const localizacao = body.localizacao?.trim();
     const observacao = body.observacao?.trim() || null;
 
     const tipoId = Number(body.tipoId);
@@ -78,9 +78,11 @@ export async function POST(request: Request) {
     if (!numeroSerie) {
       return Response.json({ message: "Número de série é obrigatório" }, { status: 400 });
     }
+
     if (!localizacao) {
       return Response.json({ message: "Localização é obrigatória" }, { status: 400 });
     }
+
     if (!codigo) {
       return Response.json({ message: "Código é obrigatório" }, { status: 400 });
     }
