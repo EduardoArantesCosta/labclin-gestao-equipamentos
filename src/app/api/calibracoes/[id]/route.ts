@@ -7,6 +7,12 @@ type Params = {
   }>;
 };
 
+function parseDateOnly(dateString: string) {
+  const [year, month, day] = dateString.split("-").map(Number);
+
+  return new Date(year, month - 1, day, 12, 0, 0);
+}
+
 export async function GET(_: Request, { params }: Params) {
   try {
     const { id } = await params;

@@ -13,7 +13,7 @@ export async function GET() {
         intervalo: true,
         calibracoes: {
           orderBy: {
-            dataValidade: "desc",
+            createdAt: "desc",
           },
           take: 1,
         },

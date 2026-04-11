@@ -24,7 +24,10 @@ export async function GET(_: Request, { params }: Params) {
         intervalo: true,
         calibracoes: {
           orderBy: {
-            dataValidade: "desc",
+            createdAt: "desc",
+          },
+          include: {
+            empresa: true,
           },
         },
         historicosStatus: {
@@ -60,7 +63,7 @@ export async function GET(_: Request, { params }: Params) {
         if (diferencaEmDias <= 30) {
           situacao = "PROXIMO_DO_VENCIMENTO";
         } else {
-          situacao = "CALIBRADO";
+          situacao = "OK";
         }
       }
     }
@@ -94,7 +97,7 @@ export async function PUT(request: Request, { params }: Params) {
     const numeroSerie = body.numeroSerie?.trim();
     const localizacao = body.localizacao?.trim();
     const observacao = body.observacao?.trim() || null;
-
+    const statusOperacional = body.statusOperacional;
     const tipoId = Number(body.tipoId);
     const marcaId = Number(body.marcaId);
     const intervaloId = Number(body.intervaloId);
@@ -110,6 +113,12 @@ export async function PUT(request: Request, { params }: Params) {
 
     if (!localizacao) {
       return Response.json({ message: "Localização é obrigatória" }, { status: 400 });
+    }
+
+    const statusPermitidos = ["AGUARDANDO_CALIBRACAO", "EM_CALIBRACAO", "DISPONIVEL", "EM_USO"];
+
+    if (!statusPermitidos.includes(statusOperacional)) {
+      return Response.json({ message: "Status operacional inválido" }, { status: 400 });
     }
 
     if (isNaN(tipoId)) {
@@ -170,23 +179,38 @@ export async function PUT(request: Request, { params }: Params) {
       return Response.json({ message: "Intervalo de calibração não encontrado" }, { status: 404 });
     }
 
-    const equipamentoAtualizado = await prisma.equipamento.update({
-      where: { id: idNumber },
-      data: {
-        codigo,
-        numeroSerie,
-        localizacao,
-        observacao,
-        tipoId,
-        marcaId,
-        intervaloId,
-        ativo: typeof ativo === "boolean" ? ativo : equipamentoExistente.ativo,
-      },
-      include: {
-        tipo: true,
-        marca: true,
-        intervalo: true,
-      },
+    const equipamentoAtualizado = await prisma.$transaction(async (tx) => {
+      const equipamento = await tx.equipamento.update({
+        where: { id: idNumber },
+        data: {
+          codigo,
+          numeroSerie,
+          localizacao,
+          observacao,
+          statusOperacional,
+          tipoId,
+          marcaId,
+          intervaloId,
+          ativo: typeof ativo === "boolean" ? ativo : equipamentoExistente.ativo,
+        },
+        include: {
+          tipo: true,
+          marca: true,
+          intervalo: true,
+        },
+      });
+
+      if (equipamentoExistente.statusOperacional !== statusOperacional) {
+        await tx.historicoStatus.create({
+          data: {
+            statusAnterior: equipamentoExistente.statusOperacional,
+            statusNovo: statusOperacional,
+            equipamentoId: idNumber,
+          },
+        });
+      }
+
+      return equipamento;
     });
 
     return Response.json(equipamentoAtualizado);

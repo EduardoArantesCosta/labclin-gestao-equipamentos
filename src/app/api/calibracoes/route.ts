@@ -1,6 +1,12 @@
 import { prisma } from "../../../lib/prisma";
 import { NextResponse } from "next/server";
 
+function parseDateOnly(dateString: string) {
+  const [year, month, day] = dateString.split("-").map(Number);
+
+  return new Date(year, month - 1, day, 12, 0, 0);
+}
+
 export async function GET() {
   try {
     const calibracoes = await prisma.calibracao.findMany({
@@ -82,8 +88,8 @@ export async function POST(request: Request) {
     const resultado = await prisma.$transaction(async (tx) => {
       const novaCalibracao = await tx.calibracao.create({
         data: {
-          dataCalibracao: new Date(dataCalibracao),
-          dataValidade: new Date(dataValidade),
+          dataCalibracao: parseDateOnly(dataCalibracao),
+          dataValidade: parseDateOnly(dataValidade),
           numeroCertificado,
           equipamentoId,
           empresaId,

@@ -46,6 +46,7 @@ export function EditarEquipamentoForm({ equipamento, tipos, marcas, intervalos }
   const [numeroSerie, setNumeroSerie] = useState(equipamento.numeroSerie ?? "");
   const [localizacao, setLocalizacao] = useState(equipamento.localizacao ?? "");
   const [observacao, setObservacao] = useState(equipamento.observacao ?? "");
+  const [statusOperacional, setStatusOperacional] = useState(equipamento.statusOperacional);
   const [tipoId, setTipoId] = useState(String(equipamento.tipoId));
   const [marcaId, setMarcaId] = useState(String(equipamento.marcaId));
   const [intervaloId, setIntervaloId] = useState(String(equipamento.intervaloId));
@@ -68,6 +69,7 @@ export function EditarEquipamentoForm({ equipamento, tipos, marcas, intervalos }
           numeroSerie,
           localizacao,
           observacao,
+          statusOperacional,
           tipoId: Number(tipoId),
           marcaId: Number(marcaId),
           intervaloId: Number(intervaloId),
@@ -145,6 +147,23 @@ export function EditarEquipamentoForm({ equipamento, tipos, marcas, intervalos }
             onChange={(event) => setObservacao(event.target.value)}
             className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-slate-400"
           />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="statusOperacional" className="text-sm font-medium text-slate-700">
+            Status operacional
+          </label>
+
+          <select
+            id="statusOperacional"
+            value={statusOperacional}
+            onChange={(event) => setStatusOperacional(event.target.value)}
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-slate-400"
+          >
+            <option value="AGUARDANDO_CALIBRACAO">Aguardando calibração</option>
+            <option value="EM_CALIBRACAO">Em calibração</option>
+            <option value="DISPONIVEL">Disponível</option>
+            <option value="EM_USO">Em uso</option>
+          </select>
         </div>
 
         <div className="space-y-2">

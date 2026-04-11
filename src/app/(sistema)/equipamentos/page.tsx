@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type TipoEquipamento = {
   id: number;
   nome: string;
@@ -53,11 +55,11 @@ function getSituacaoStyle(situacao: string) {
   switch (situacao) {
     case "VENCIDO":
       return "inline-flex rounded-full bg-red-500 px-4 py-1 text-sm font-bold text-white";
-    case "PROXIMO_DO_VENCIMENTO":
+    case "PROXIMO DO VENCIMENTO":
       return "inline-flex rounded-full bg-yellow-400 px-4 py-1 text-sm font-bold text-black";
     case "CALIBRADO":
       return "inline-flex rounded-full bg-green-500 px-4 py-1 text-sm font-bold text-white";
-    case "EM_CALIBRACAO":
+    case "EM CALIBRACAO":
       return "inline-flex rounded-full bg-blue-500 px-4 py-1 text-sm font-bold text-white";
     default:
       return "inline-flex rounded-full bg-gray-400 px-4 py-1 text-sm font-bold text-white";
@@ -96,6 +98,10 @@ export default async function EquipamentosPage() {
                 Número de Série
               </th>
               <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
+                Localização
+              </th>
+
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
                 Situação
               </th>
               <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
@@ -104,6 +110,7 @@ export default async function EquipamentosPage() {
               <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
                 Validade
               </th>
+
               <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">Ações</th>
             </tr>
           </thead>
@@ -113,6 +120,7 @@ export default async function EquipamentosPage() {
               <tr key={equipamento.id} className="hover:bg-gray-50">
                 <td className="border px-4 py-3">{equipamento.codigo}</td>
                 <td className="border px-4 py-3">{equipamento.numeroSerie}</td>
+                <td className="border px-4 py-3">{equipamento.localizacao || "-"}</td>
                 <td className="border px-4 py-3">
                   <span className={getSituacaoStyle(equipamento.situacao)}>
                     {equipamento.situacao}
@@ -128,26 +136,26 @@ export default async function EquipamentosPage() {
                 </td>
                 <td className="border px-6 py-4">
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
+                    <Link
+                      href={`/equipamentos/${equipamento.id}`}
                       className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                     >
                       Ver
-                    </button>
+                    </Link>
 
-                    <button
-                      type="button"
+                    <Link
+                      href={`/equipamentos/${equipamento.id}/editar`}
                       className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                     >
                       Editar
-                    </button>
+                    </Link>
 
-                    <button
-                      type="button"
+                    <Link
+                      href={`/equipamentos/${equipamento.id}/calibracoes/nova`}
                       className="rounded-lg border border-[#7D55C7] bg-[#7D55C7] px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90"
                     >
                       Calibração
-                    </button>
+                    </Link>
                   </div>
                 </td>
               </tr>
