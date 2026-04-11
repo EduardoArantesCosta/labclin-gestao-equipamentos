@@ -51,16 +51,14 @@ export function AppNavbar() {
       <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-6 px-6 py-4">
         <Link href="/dashboard" className="shrink-0">
           <div className="flex flex-col">
-            <Link href="/" className="flex items-center">
-              <Image
-                src="../../logo.svg"
-                alt="Logo da Laborclin"
-                width={220}
-                height={60}
-                className="h-10 w-auto"
-                priority
-              />
-            </Link>
+            <Image
+              src="/logo.svg"
+              alt="Logo da Laborclin"
+              width={200}
+              height={80}
+              className="h-10 w-auto"
+              priority
+            />
           </div>
         </Link>
 

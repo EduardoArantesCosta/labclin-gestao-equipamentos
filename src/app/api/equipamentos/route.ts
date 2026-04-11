@@ -27,7 +27,7 @@ export async function GET() {
       let situacao = "OK";
 
       if (equipamento.statusOperacional === "EM_CALIBRACAO") {
-        situacao = "EM_CALIBRACAO";
+        situacao = "EM CALIBRACAO";
       } else if (!ultimaCalibracao) {
         situacao = "VENCIDO";
       } else {
@@ -40,7 +40,7 @@ export async function GET() {
           const diferencaEmDias = Math.ceil(diferencaEmMs / (1000 * 60 * 60 * 24));
 
           if (diferencaEmDias <= 30) {
-            situacao = "PROXIMO_DO_VENCIMENTO";
+            situacao = "PROXIMO DO VENCIMENTO";
           } else {
             situacao = "CALIBRADO";
           }

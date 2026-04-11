@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 type TipoEquipamento = {
   id: number;
   nome: string;
@@ -54,41 +52,15 @@ async function getEquipamentos(): Promise<Equipamento[]> {
 function getSituacaoStyle(situacao: string) {
   switch (situacao) {
     case "VENCIDO":
-      return "inline-flex min-w-[110px] justify-center rounded-full bg-red-500 px-4 py-1.5 text-xs font-bold tracking-wide text-white";
+      return "inline-flex rounded-full bg-red-500 px-4 py-1 text-sm font-bold text-white";
     case "PROXIMO_DO_VENCIMENTO":
-      return "inline-flex min-w-[170px] justify-center rounded-full bg-yellow-400 px-4 py-1.5 text-xs font-bold tracking-wide text-black";
-    case "OK":
-      return "inline-flex min-w-[70px] justify-center rounded-full bg-green-500 px-4 py-1.5 text-xs font-bold tracking-wide text-white";
+      return "inline-flex rounded-full bg-yellow-400 px-4 py-1 text-sm font-bold text-black";
+    case "CALIBRADO":
+      return "inline-flex rounded-full bg-green-500 px-4 py-1 text-sm font-bold text-white";
     case "EM_CALIBRACAO":
-      return "inline-flex min-w-[130px] justify-center rounded-full bg-blue-500 px-4 py-1.5 text-xs font-bold tracking-wide text-white";
+      return "inline-flex rounded-full bg-blue-500 px-4 py-1 text-sm font-bold text-white";
     default:
-      return "inline-flex min-w-[90px] justify-center rounded-full bg-gray-400 px-4 py-1.5 text-xs font-bold tracking-wide text-white";
-  }
-}
-
-function formatarSituacao(situacao: string) {
-  switch (situacao) {
-    case "PROXIMO_DO_VENCIMENTO":
-      return "Próximo do vencimento";
-    case "EM_CALIBRACAO":
-      return "Em calibração";
-    default:
-      return situacao;
-  }
-}
-
-function formatarStatusOperacional(status: string) {
-  switch (status) {
-    case "AGUARDANDO_CALIBRACAO":
-      return "Aguardando calibração";
-    case "EM_CALIBRACAO":
-      return "Em calibração";
-    case "DISPONIVEL":
-      return "Disponível";
-    case "EM_USO":
-      return "Em uso";
-    default:
-      return status;
+      return "inline-flex rounded-full bg-gray-400 px-4 py-1 text-sm font-bold text-white";
   }
 }
 
@@ -99,7 +71,7 @@ export default async function EquipamentosPage() {
     VENCIDO: 1,
     PROXIMO_DO_VENCIMENTO: 2,
     EM_CALIBRACAO: 3,
-    OK: 4,
+    CALIBRADO: 4,
   };
 
   const equipamentosOrdenados = [...equipamentos].sort((a, b) => {
@@ -110,112 +82,78 @@ export default async function EquipamentosPage() {
   });
 
   return (
-    <main className="min-h-screen bg-slate-100">
-      <div className="max-w-8xl mx-auto w-full px-6 py-8">
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 bg-slate-50 px-8 py-6">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-center text-3xl font-bold tracking-tight text-slate-900">
-                Gestão de Equipamentos
-              </h1>
-            </div>
-          </div>
+    <main className="p-6">
+      <div className="flex justify-center">
+        <h1 className="mb-6 text-center text-2xl font-bold">GESTÃO DE EQUIPAMENTOS</h1>
+      </div>
 
-          <div className="px-8 py-6">
-            <div className="mb-4 flex items-center justify-between"></div>
+      <div className="overflow-x-auto rounded-xl border">
+        <table className="min-w-full border-collapse">
+          <thead>
+            <tr className="text-gray-600 uppercase">
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">Código</th>
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
+                Número de Série
+              </th>
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
+                Situação
+              </th>
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
+                Status Operacional
+              </th>
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
+                Validade
+              </th>
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">Ações</th>
+            </tr>
+          </thead>
 
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead className="bg-slate-100">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Código
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Número de Série
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Situação
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Status Operacional
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Validade
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Ações
-                      </th>
-                    </tr>
-                  </thead>
+          <tbody>
+            {equipamentosOrdenados.map((equipamento) => (
+              <tr key={equipamento.id} className="hover:bg-gray-50">
+                <td className="border px-4 py-3">{equipamento.codigo}</td>
+                <td className="border px-4 py-3">{equipamento.numeroSerie}</td>
+                <td className="border px-4 py-3">
+                  <span className={getSituacaoStyle(equipamento.situacao)}>
+                    {equipamento.situacao}
+                  </span>
+                </td>
+                <td className="border px-4 py-3">{equipamento.statusOperacional}</td>
+                <td className="border px-4 py-3">
+                  {equipamento.ultimaCalibracao
+                    ? new Date(equipamento.ultimaCalibracao.dataValidade).toLocaleDateString(
+                        "pt-BR",
+                      )
+                    : "-"}
+                </td>
+                <td className="border px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Ver
+                    </button>
 
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {equipamentosOrdenados.map((equipamento) => (
-                      <tr
-                        key={equipamento.id}
-                        className={`transition-colors hover:bg-slate-50 ${
-                          equipamento.situacao === "VENCIDO" ? "bg-red-50" : ""
-                        }`}
-                      >
-                        <td className="px-6 py-4 text-sm font-semibold text-slate-900">
-                          {equipamento.codigo}
-                        </td>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Editar
+                    </button>
 
-                        <td className="px-6 py-4 text-sm text-slate-700">
-                          {equipamento.numeroSerie || "-"}
-                        </td>
-
-                        <td className="px-6 py-4">
-                          <span className={getSituacaoStyle(equipamento.situacao)}>
-                            {formatarSituacao(equipamento.situacao)}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4 text-sm text-slate-700">
-                          {formatarStatusOperacional(equipamento.statusOperacional)}
-                        </td>
-
-                        <td className="px-6 py-4 text-sm text-slate-700">
-                          {equipamento.ultimaCalibracao
-                            ? new Date(
-                                equipamento.ultimaCalibracao.dataValidade,
-                              ).toLocaleDateString("pt-BR")
-                            : "-"}
-                        </td>
-
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <Link
-                              href={`/equipamentos/${equipamento.id}`}
-                              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
-                            >
-                              Ver
-                            </Link>
-
-                            <Link
-                              href={`/equipamentos/${equipamento.id}/editar`}
-                              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
-                            >
-                              Editar
-                            </Link>
-
-                            <Link
-                              href={`/equipamentos/${equipamento.id}/calibracoes/nova`}
-                              className="rounded-lg border border-[#7D55C7] bg-[#7D55C7] px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90"
-                            >
-                              Calibração
-                            </Link>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-[#7D55C7] bg-[#7D55C7] px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90"
+                    >
+                      Calibração
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </main>
   );
