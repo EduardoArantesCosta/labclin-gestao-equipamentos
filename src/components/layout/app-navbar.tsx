@@ -19,7 +19,7 @@ const navItems = [
   },
   {
     label: "Empresa",
-    href: "/cadastros/empresas",
+    href: "/cadastros/empresas-calibracao",
   },
   {
     label: "Marcas",
@@ -27,11 +27,11 @@ const navItems = [
   },
   {
     label: "Tipos",
-    href: "/cadastros/tipos-equipamentos",
+    href: "/cadastros/tipos-equipamento",
   },
   {
     label: "Intervalos",
-    href: "/cadastros/intervalos",
+    href: "/cadastros/intervalos-calibracao",
   },
 ];
 

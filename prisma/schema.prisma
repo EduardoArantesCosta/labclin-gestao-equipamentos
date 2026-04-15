@@ -71,6 +71,7 @@ model Equipamento {
   numeroSerie       String?
   localizacao       String?
   observacao        String?
+  limiteErro        Float?
   statusOperacional StatusOperacional   @default(AGUARDANDO_CALIBRACAO)
   ativo             Boolean             @default(true)
   createdAt         DateTime            @default(now())
@@ -94,14 +95,32 @@ model Calibracao {
   dataValidade      DateTime
   numeroCertificado String             @unique
   createdAt         DateTime           @default(now())
-
+  certificadoUrl    String?
+  certificadoNome   String?
   equipamentoId     Int
   empresaId         Int
 
   equipamento       Equipamento        @relation(fields: [equipamentoId], references: [id])
   empresa           EmpresaCalibracao  @relation(fields: [empresaId], references: [id])
+  leituras          LeituraCalibracao[]
 
   @@map("calibracoes")
+}
+
+model LeituraCalibracao {
+  id                 Int        @id @default(autoincrement())
+  leituraPadrao      Float
+  leituraInstrumento Float
+  erroEncontrado     Float
+  toleranciaMinima   Float
+  toleranciaMaxima   Float
+  validado           Boolean
+  createdAt          DateTime   @default(now())
+
+  calibracaoId       Int
+  calibracao         Calibracao @relation(fields: [calibracaoId], references: [id])
+
+  @@map("leituras_calibracao")
 }
 
 model HistoricoStatus {

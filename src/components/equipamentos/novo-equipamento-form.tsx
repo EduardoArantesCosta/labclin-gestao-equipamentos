@@ -19,43 +19,26 @@ type IntervaloCalibracao = {
   dias: number | null;
 };
 
-type Equipamento = {
-  id: number;
-  codigo: string;
-  numeroSerie: string | null;
-  localizacao: string | null;
-  observacao: string | null;
-  statusOperacional: string;
-  ativo: boolean;
-  tipoId: number;
-  marcaId: number;
-  intervaloId: number;
-  limiteErro: number | null;
-};
-
 type Props = {
-  equipamento: Equipamento;
   tipos: TipoEquipamento[];
   marcas: Marca[];
   intervalos: IntervaloCalibracao[];
 };
 
-export function EditarEquipamentoForm({ equipamento, tipos, marcas, intervalos }: Props) {
+export function NovoEquipamentoForm({ tipos, marcas, intervalos }: Props) {
   const router = useRouter();
 
-  const [codigo, setCodigo] = useState(equipamento.codigo);
-  const [numeroSerie, setNumeroSerie] = useState(equipamento.numeroSerie ?? "");
-  const [localizacao, setLocalizacao] = useState(equipamento.localizacao ?? "");
-  const [observacao, setObservacao] = useState(equipamento.observacao ?? "");
-  const [statusOperacional, setStatusOperacional] = useState(equipamento.statusOperacional);
-  const [tipoId, setTipoId] = useState(String(equipamento.tipoId));
-  const [marcaId, setMarcaId] = useState(String(equipamento.marcaId));
-  const [intervaloId, setIntervaloId] = useState(String(equipamento.intervaloId));
+  const [codigo, setCodigo] = useState("");
+  const [numeroSerie, setNumeroSerie] = useState("");
+  const [localizacao, setLocalizacao] = useState("");
+  const [observacao, setObservacao] = useState("");
+  const [statusOperacional, setStatusOperacional] = useState("AGUARDANDO_CALIBRACAO");
+  const [tipoId, setTipoId] = useState(tipos[0]?.id ? String(tipos[0].id) : "");
+  const [marcaId, setMarcaId] = useState(marcas[0]?.id ? String(marcas[0].id) : "");
+  const [intervaloId, setIntervaloId] = useState(intervalos[0]?.id ? String(intervalos[0].id) : "");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
-  const [limiteErro, setLimiteErro] = useState(
-    equipamento.limiteErro !== null ? String(equipamento.limiteErro) : "",
-  );
+  const [limiteErro, setLimiteErro] = useState("");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -63,46 +46,45 @@ export function EditarEquipamentoForm({ equipamento, tipos, marcas, intervalos }
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/equipamentos/${equipamento.id}`, {
-        method: "PUT",
+      const response = await fetch("/api/equipamentos", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           codigo,
           numeroSerie,
-          limiteErro: Number(limiteErro),
           localizacao,
           observacao,
           statusOperacional,
+          limiteErro: Number(limiteErro),
           tipoId: Number(tipoId),
           marcaId: Number(marcaId),
           intervaloId: Number(intervaloId),
-          ativo: equipamento.ativo,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setErro(data.message || "Erro ao atualizar equipamento");
+        setErro(data.message || "Erro ao cadastrar equipamento");
         setLoading(false);
         return;
       }
 
-      router.push(`/equipamentos/${equipamento.id}`);
+      router.push("/equipamentos");
       router.refresh();
     } catch (error) {
       console.error(error);
-      setErro("Erro ao atualizar equipamento");
+      setErro("Erro ao cadastrar equipamento");
       setLoading(false);
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-2">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-0">
           <label htmlFor="codigo" className="text-sm font-medium text-slate-700">
             Código
           </label>
@@ -212,6 +194,7 @@ export function EditarEquipamentoForm({ equipamento, tipos, marcas, intervalos }
             ))}
           </select>
         </div>
+
         <div className="space-y-2">
           <label htmlFor="limiteErro" className="text-sm font-medium text-slate-700">
             Limite de erro
@@ -225,6 +208,7 @@ export function EditarEquipamentoForm({ equipamento, tipos, marcas, intervalos }
             className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-slate-400"
           />
         </div>
+
         <div className="space-y-2 md:col-span-2">
           <label htmlFor="observacao" className="text-sm font-medium text-slate-700">
             Observação
@@ -251,12 +235,12 @@ export function EditarEquipamentoForm({ equipamento, tipos, marcas, intervalos }
           disabled={loading}
           className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? "Salvando..." : "Salvar alterações"}
+          {loading ? "Cadastrando..." : "Cadastrar equipamento"}
         </button>
 
         <button
           type="button"
-          onClick={() => router.push(`/equipamentos/${equipamento.id}`)}
+          onClick={() => router.push("/equipamentos")}
           className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
         >
           Cancelar

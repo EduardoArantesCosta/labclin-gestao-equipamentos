@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 type TipoEquipamento = {
   id: number;
@@ -37,6 +37,7 @@ type Equipamento = {
   createdAt: string;
   situacao: string;
   tipo: TipoEquipamento;
+  limiteErro: number | null;
   marca: Marca;
   intervalo: IntervaloCalibracao;
   ultimaCalibracao: Calibracao | null;
@@ -64,9 +65,11 @@ function getSituacaoStyle(situacao: string) {
 function formatarSituacao(situacao: string) {
   switch (situacao) {
     case "PROXIMO_DO_VENCIMENTO":
-      return "Próximo do vencimento";
+      return "PRÓXIMO DO VENCIMENTO";
     case "EM_CALIBRACAO":
-      return "Em calibração";
+      return "EM CALIBRAÇÃO";
+    case "OK":
+      return "CALIBRADO";
     default:
       return situacao;
   }
@@ -75,13 +78,13 @@ function formatarSituacao(situacao: string) {
 function formatarStatusOperacional(status: string) {
   switch (status) {
     case "AGUARDANDO_CALIBRACAO":
-      return "Aguardando calibração";
+      return "AGUARDANDO CALIBRAÇÃO";
     case "EM_CALIBRACAO":
-      return "Em calibração";
+      return "EM CALIBRAÇÃO";
     case "DISPONIVEL":
-      return "Disponível";
+      return "DISPONÍVEL";
     case "EM_USO":
-      return "Em uso";
+      return "EM USO";
     default:
       return status;
   }
@@ -119,133 +122,132 @@ export function EquipamentosTable({ equipamentos }: Props) {
 
   return (
     <>
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-4 flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-slate-800">Equipamentos cadastrados</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Visualização geral dos equipamentos monitorados no sistema.
+          <h2 className="text-sm font-bold tracking-wide text-gray-600 uppercase">
+            Equipamentos cadastrados
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Visualização geral dos equipamentos monitorados.
           </p>
         </div>
 
-        <div className="w-full sm:w-72">
-          <label htmlFor="tipo" className="mb-2 block text-sm font-medium text-slate-700">
-            Filtrar por tipo
-          </label>
-          <select
-            id="tipo"
-            value={tipoSelecionado}
-            onChange={(event) => setTipoSelecionado(event.target.value)}
-            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-slate-400"
+        <div className="flex items-end gap-4">
+          <Link
+            href="/cadastros/equipamentos"
+            className="inline-flex items-center rounded-xl bg-[#523178] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
           >
-            {tiposDisponiveis.map((tipo) => (
-              <option key={tipo} value={tipo}>
-                {tipo === "TODOS" ? "Todos os tipos" : tipo}
-              </option>
-            ))}
-          </select>
+            + Novo equipamento
+          </Link>
+
+          <div className="min-w-[260px]">
+            <label
+              htmlFor="tipo"
+              className="mb-2 block text-xs font-bold tracking-wide text-gray-600 uppercase"
+            >
+              Filtrar por tipo
+            </label>
+            <select
+              id="tipo"
+              value={tipoSelecionado}
+              onChange={(event) => setTipoSelecionado(event.target.value)}
+              className="w-full rounded-lg border px-4 py-3 text-sm outline-none"
+            >
+              {tiposDisponiveis.map((tipo) => (
+                <option key={tipo} value={tipo}>
+                  {tipo === "TODOS" ? "Todos" : tipo}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="flex justify-center">
-        <h1 className="mb-6 text-center text-2xl font-bold">GESTÃO DE EQUIPAMENTOS</h1>
-        <div className="overflow-x-auto rounded-xl border">
-          <table className="min-w-full border-collapse">
-            <thead>
-              <tr className="text-gray-600 uppercase">
-                <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
-                  Código
-                </th>
-                <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
-                  Número de Série
-                </th>
-                <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
-                  Localização
-                </th>
-                <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">Tipo</th>
-                <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
-                  Situação
-                </th>
-                <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
-                  Status Operacional
-                </th>
-                <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
-                  Validade
-                </th>
-                <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
-                  Ações
-                </th>
+      <div className="overflow-x-auto rounded-xl border">
+        <table className="min-w-full border-collapse">
+          <thead>
+            <tr className="text-gray-600 uppercase">
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">Código</th>
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
+                Nº Certificado
+              </th>
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
+                Localização
+              </th>
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">Tipo</th>
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
+                Situação
+              </th>
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
+                Status Operacional
+              </th>
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">
+                Validade
+              </th>
+              <th className="border px-6 py-4 text-left text-xs font-bold tracking-wide">Ações</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {equipamentosFiltrados.map((equipamento) => (
+              <tr key={equipamento.id} className="hover:bg-gray-50">
+                <td className="border px-4 py-3">{equipamento.codigo}</td>
+                <td className="border px-4 py-3">
+                  {equipamento.ultimaCalibracao?.numeroCertificado || "-"}
+                </td>
+                <td className="border px-4 py-3">{equipamento.localizacao || "-"}</td>
+                <td className="border px-4 py-3">{equipamento.tipo.nome}</td>
+                <td className="border px-4 py-3">
+                  <span className={getSituacaoStyle(equipamento.situacao)}>
+                    {formatarSituacao(equipamento.situacao)}
+                  </span>
+                </td>
+                <td className="border px-4 py-3">
+                  {formatarStatusOperacional(equipamento.statusOperacional)}
+                </td>
+                <td className="border px-4 py-3">
+                  {equipamento.ultimaCalibracao
+                    ? new Date(equipamento.ultimaCalibracao.dataValidade).toLocaleDateString(
+                        "pt-BR",
+                      )
+                    : "-"}
+                </td>
+                <td className="border px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/equipamentos/${equipamento.id}`}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Ver
+                    </Link>
+
+                    <Link
+                      href={`/equipamentos/${equipamento.id}/editar`}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Editar
+                    </Link>
+
+                    <Link
+                      href={`/equipamentos/${equipamento.id}/calibracoes/nova`}
+                      className="rounded-lg border border-[#7D55C7] bg-[#7D55C7] px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90"
+                    >
+                      Calibração
+                    </Link>
+                  </div>
+                </td>
               </tr>
-            </thead>
+            ))}
 
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {equipamentosFiltrados.map((equipamento) => (
-                <tr
-                  key={equipamento.id}
-                  className={`transition-colors hover:bg-slate-50 ${
-                    equipamento.situacao === "VENCIDO" ? "bg-red-50" : ""
-                  }`}
-                >
-                  <td className="px-6 py-4 text-sm font-semibold text-slate-900">
-                    {equipamento.codigo}
-                  </td>
-
-                  <td className="px-6 py-4 text-sm text-slate-700">
-                    {equipamento.numeroSerie || "-"}
-                  </td>
-
-                  <td className="px-6 py-4 text-sm text-slate-700">
-                    {equipamento.localizacao || "-"}
-                  </td>
-
-                  <td className="px-6 py-4 text-sm text-slate-700">{equipamento.tipo.nome}</td>
-
-                  <td className="px-6 py-4">
-                    <span className={getSituacaoStyle(equipamento.situacao)}>
-                      {formatarSituacao(equipamento.situacao)}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4 text-sm text-slate-700">
-                    {formatarStatusOperacional(equipamento.statusOperacional)}
-                  </td>
-
-                  <td className="px-6 py-4 text-sm text-slate-700">
-                    {equipamento.ultimaCalibracao
-                      ? new Date(equipamento.ultimaCalibracao.dataValidade).toLocaleDateString(
-                          "pt-BR",
-                        )
-                      : "-"}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/equipamentos/${equipamento.id}`}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
-                      >
-                        Ver
-                      </Link>
-
-                      <Link
-                        href={`/equipamentos/${equipamento.id}/editar`}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
-                      >
-                        Editar
-                      </Link>
-
-                      <Link
-                        href={`/equipamentos/${equipamento.id}/calibracoes/nova`}
-                        className="rounded-lg border border-[#7D55C7] bg-[#7D55C7] px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90"
-                      >
-                        Calibração
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            {equipamentosFiltrados.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="border px-4 py-6 text-center text-sm text-gray-500">
+                  Nenhum equipamento encontrado para o tipo selecionado.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
       </div>
     </>
   );

@@ -25,6 +25,7 @@ type Equipamento = {
   statusOperacional: string;
   ativo: boolean;
   tipoId: number;
+  limiteErro: number | null;
   marcaId: number;
   intervaloId: number;
   tipo: TipoEquipamento;

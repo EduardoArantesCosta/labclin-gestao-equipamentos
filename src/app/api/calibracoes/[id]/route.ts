@@ -1,56 +1,67 @@
 import { prisma } from "../../../../lib/prisma";
 import { NextResponse } from "next/server";
 
-type Params = {
-  params: Promise<{
-    id: string;
-  }>;
-};
-
+/**
+ * Corrige problema de timezone (evita -1 dia)
+ */
 function parseDateOnly(dateString: string) {
   const [year, month, day] = dateString.split("-").map(Number);
-
   return new Date(year, month - 1, day, 12, 0, 0);
 }
 
-export async function GET(_: Request, { params }: Params) {
+type LeituraInput = {
+  leituraPadrao: number | string;
+  leituraInstrumento: number | string;
+};
+
+/**
+ * Calcula os valores da leitura
+ */
+function calcularLeitura(leituraPadrao: number, leituraInstrumento: number, limiteErro: number) {
+  const erroEncontrado = leituraInstrumento - leituraPadrao;
+
+  const toleranciaMinima = leituraPadrao - limiteErro;
+  const toleranciaMaxima = leituraPadrao + limiteErro;
+
+  const validado = leituraInstrumento >= toleranciaMinima && leituraInstrumento <= toleranciaMaxima;
+
+  return {
+    erroEncontrado,
+    toleranciaMinima,
+    toleranciaMaxima,
+    validado,
+  };
+}
+
+/**
+ * GET - lista calibrações
+ */
+export async function GET() {
   try {
-    const { id } = await params;
-    const idNumber = Number(id);
-
-    if (isNaN(idNumber)) {
-      return NextResponse.json({ message: "ID inválido" }, { status: 400 });
-    }
-
-    const calibracao = await prisma.calibracao.findUnique({
-      where: { id: idNumber },
+    const calibracoes = await prisma.calibracao.findMany({
+      orderBy: {
+        dataCalibracao: "desc",
+      },
       include: {
         equipamento: true,
         empresa: true,
+        leituras: true,
       },
     });
 
-    if (!calibracao) {
-      return NextResponse.json({ message: "Calibração não encontrada" }, { status: 404 });
-    }
-
-    return NextResponse.json(calibracao);
+    return NextResponse.json(calibracoes);
   } catch (error) {
-    console.error("Erro ao buscar calibração:", error);
+    console.error("Erro ao buscar calibrações:", error);
 
     return NextResponse.json({ message: "Erro interno do servidor" }, { status: 500 });
   }
 }
 
-export async function PUT(request: Request, { params }: Params) {
+/**
+ * POST - cria calibração com leituras
+ */
+export async function POST(request: Request) {
   try {
-    const { id } = await params;
-    const idNumber = Number(id);
-
-    if (isNaN(idNumber)) {
-      return Response.json({ message: "ID inválido" }, { status: 400 });
-    }
-
     const body = await request.json();
 
     const dataCalibracao = body.dataCalibracao;
@@ -60,112 +71,124 @@ export async function PUT(request: Request, { params }: Params) {
     const equipamentoId = Number(body.equipamentoId);
     const empresaId = Number(body.empresaId);
 
+    const leituras = Array.isArray(body.leituras) ? body.leituras : [];
+
+    // ===== VALIDAÇÕES =====
+
     if (!dataCalibracao) {
-      return Response.json({ message: "Data da calibração é obrigatória" }, { status: 400 });
+      return NextResponse.json({ message: "Data da calibração é obrigatória" }, { status: 400 });
     }
 
     if (!dataValidade) {
-      return Response.json({ message: "Data de validade é obrigatória" }, { status: 400 });
+      return NextResponse.json({ message: "Data de validade é obrigatória" }, { status: 400 });
     }
 
     if (!numeroCertificado) {
-      return Response.json({ message: "Número do certificado é obrigatório" }, { status: 400 });
+      return NextResponse.json({ message: "Número do certificado é obrigatório" }, { status: 400 });
     }
 
-    if (isNaN(equipamentoId)) {
-      return Response.json({ message: "equipamentoId inválido" }, { status: 400 });
+    if (!equipamentoId || isNaN(equipamentoId)) {
+      return NextResponse.json({ message: "Equipamento inválido" }, { status: 400 });
     }
 
-    if (isNaN(empresaId)) {
-      return Response.json({ message: "empresaId inválido" }, { status: 400 });
+    if (!empresaId || isNaN(empresaId)) {
+      return NextResponse.json({ message: "Empresa inválida" }, { status: 400 });
     }
 
-    const calibracaoExistente = await prisma.calibracao.findUnique({
-      where: { id: idNumber },
-    });
-
-    if (!calibracaoExistente) {
-      return Response.json({ message: "Calibração não encontrada" }, { status: 404 });
+    if (leituras.length === 0) {
+      return NextResponse.json({ message: "Informe ao menos uma leitura" }, { status: 400 });
     }
 
-    const certificadoDuplicado = await prisma.calibracao.findFirst({
-      where: {
-        numeroCertificado,
-        NOT: { id: idNumber },
-      },
-    });
+    // ===== VERIFICAR EQUIPAMENTO =====
 
-    if (certificadoDuplicado) {
-      return Response.json(
-        { message: "Já existe outra calibração com esse certificado" },
-        { status: 409 },
-      );
-    }
-
-    const equipamentoExiste = await prisma.equipamento.findUnique({
+    const equipamento = await prisma.equipamento.findUnique({
       where: { id: equipamentoId },
     });
 
-    if (!equipamentoExiste) {
-      return Response.json({ message: "Equipamento não encontrado" }, { status: 404 });
+    if (!equipamento) {
+      return NextResponse.json({ message: "Equipamento não encontrado" }, { status: 404 });
     }
 
-    const empresaExiste = await prisma.empresaCalibracao.findUnique({
-      where: { id: empresaId },
-    });
-
-    if (!empresaExiste) {
-      return Response.json({ message: "Empresa não encontrada" }, { status: 404 });
+    if (equipamento.limiteErro === null || equipamento.limiteErro === undefined) {
+      return NextResponse.json(
+        { message: "Equipamento não possui limite de erro cadastrado" },
+        { status: 400 },
+      );
     }
 
-    const calibracaoAtualizada = await prisma.calibracao.update({
-      where: { id: idNumber },
-      data: {
-        dataCalibracao: new Date(dataCalibracao),
-        dataValidade: new Date(dataValidade),
-        numeroCertificado,
-        equipamentoId,
-        empresaId,
-      },
-      include: {
-        equipamento: true,
-        empresa: true,
-      },
+    // ===== TRANSAÇÃO =====
+
+    const resultado = await prisma.$transaction(async (tx) => {
+      // cria calibração
+      const novaCalibracao = await tx.calibracao.create({
+        data: {
+          dataCalibracao: parseDateOnly(dataCalibracao),
+          dataValidade: parseDateOnly(dataValidade),
+          numeroCertificado,
+          equipamentoId,
+          empresaId,
+        },
+        include: {
+          equipamento: true,
+          empresa: true,
+        },
+      });
+
+      // calcula leituras
+      const leiturasCalculadas = leituras.map((leitura: LeituraInput) => {
+        const leituraPadrao = Number(leitura.leituraPadrao);
+        const leituraInstrumento = Number(leitura.leituraInstrumento);
+
+        if (isNaN(leituraPadrao) || isNaN(leituraInstrumento)) {
+          throw new Error("Leitura inválida");
+        }
+
+        const calculo = calcularLeitura(
+          leituraPadrao,
+          leituraInstrumento,
+          equipamento.limiteErro as number,
+        );
+
+        return {
+          leituraPadrao,
+          leituraInstrumento,
+          ...calculo,
+          calibracaoId: novaCalibracao.id,
+        };
+      });
+
+      // salva leituras
+      await tx.leituraCalibracao.createMany({
+        data: leiturasCalculadas,
+      });
+
+      // atualiza status do equipamento
+      const statusAnterior = equipamento.statusOperacional;
+      const statusNovo = "DISPONIVEL";
+
+      await tx.equipamento.update({
+        where: { id: equipamentoId },
+        data: {
+          statusOperacional: statusNovo,
+        },
+      });
+
+      // histórico
+      await tx.historicoStatus.create({
+        data: {
+          statusAnterior,
+          statusNovo,
+          equipamentoId,
+        },
+      });
+
+      return novaCalibracao;
     });
 
-    return Response.json(calibracaoAtualizada);
+    return NextResponse.json(resultado);
   } catch (error) {
-    console.error("Erro ao atualizar calibração:", error);
+    console.error("Erro ao criar calibração:", error);
 
-    return Response.json({ message: "Erro interno do servidor" }, { status: 500 });
-  }
-}
-
-export async function DELETE(_: Request, { params }: Params) {
-  try {
-    const { id } = await params;
-    const idNumber = Number(id);
-
-    if (isNaN(idNumber)) {
-      return Response.json({ message: "ID inválido" }, { status: 400 });
-    }
-
-    const calibracaoExistente = await prisma.calibracao.findUnique({
-      where: { id: idNumber },
-    });
-
-    if (!calibracaoExistente) {
-      return Response.json({ message: "Calibração não encontrada" }, { status: 404 });
-    }
-
-    await prisma.calibracao.delete({
-      where: { id: idNumber },
-    });
-
-    return Response.json({ message: "Calibração removida com sucesso" });
-  } catch (error) {
-    console.error("Erro ao deletar calibração:", error);
-
-    return Response.json({ message: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json({ message: "Erro interno do servidor" }, { status: 500 });
   }
 }

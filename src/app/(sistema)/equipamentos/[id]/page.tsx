@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+
 type TipoEquipamento = {
   id: number;
   nome: string;
@@ -19,12 +21,23 @@ type EmpresaCalibracao = {
   nome: string;
 };
 
+type LeituraCalibracao = {
+  id: number;
+  leituraPadrao: number;
+  leituraInstrumento: number;
+  erroEncontrado: number;
+  toleranciaMinima: number;
+  toleranciaMaxima: number;
+  validado: boolean;
+};
+
 type Calibracao = {
   id: number;
   dataCalibracao: string;
   dataValidade: string;
   numeroCertificado: string;
   empresa: EmpresaCalibracao;
+  leituras: LeituraCalibracao[];
 };
 
 type HistoricoStatus = {
@@ -43,6 +56,7 @@ type Equipamento = {
   statusOperacional: string;
   ativo: boolean;
   createdAt: string;
+  limiteErro: number | null;
   situacao: string;
   tipo: TipoEquipamento;
   marca: Marca;
@@ -138,6 +152,9 @@ export default async function EquipamentoDetalhePage({
                   <strong>Intervalo:</strong> {equipamento.intervalo.nome}
                 </p>
                 <p>
+                  <strong>Limite de erro:</strong> {equipamento.limiteErro ?? "-"}
+                </p>
+                <p>
                   <strong>Situação:</strong> {formatarSituacao(equipamento.situacao)}
                 </p>
                 <p>
@@ -186,7 +203,7 @@ export default async function EquipamentoDetalhePage({
               </h2>
 
               {equipamento.calibracoes.length > 0 ? (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto rounded-lg">
                   <table className="min-w-full">
                     <thead className="bg-slate-50">
                       <tr>
@@ -207,20 +224,85 @@ export default async function EquipamentoDetalhePage({
 
                     <tbody className="divide-y divide-slate-100">
                       {equipamento.calibracoes.map((calibracao) => (
-                        <tr key={calibracao.id}>
-                          <td className="px-4 py-3 text-sm text-slate-700">
-                            {new Date(calibracao.dataCalibracao).toLocaleDateString("pt-BR")}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-slate-700">
-                            {new Date(calibracao.dataValidade).toLocaleDateString("pt-BR")}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-slate-700">
-                            {calibracao.numeroCertificado}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-slate-700">
-                            {calibracao.empresa.nome}
-                          </td>
-                        </tr>
+                        <Fragment key={calibracao.id}>
+                          <tr>
+                            <td className="px-4 py-3 text-sm text-slate-700">
+                              {new Date(calibracao.dataCalibracao).toLocaleDateString("pt-BR")}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-700">
+                              {new Date(calibracao.dataValidade).toLocaleDateString("pt-BR")}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-700">
+                              {calibracao.numeroCertificado}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-700">
+                              {calibracao.empresa?.nome || "-"}
+                            </td>
+                          </tr>
+
+                          <tr>
+                            <td colSpan={4} className="bg-slate-50 px-4 py-4">
+                              <div className="overflow-x-auto">
+                                <table className="min-w-full rounded-lg border">
+                                  <thead>
+                                    <tr className="bg-slate-100">
+                                      <th className="border px-3 py-2 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                                        Leitura padrão
+                                      </th>
+                                      <th className="border px-3 py-2 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                                        Leitura instrumento
+                                      </th>
+                                      <th className="border px-3 py-2 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                                        Erro encontrado
+                                      </th>
+                                      <th className="border px-3 py-2 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                                        Tolerância mínima
+                                      </th>
+                                      <th className="border px-3 py-2 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                                        Tolerância máxima
+                                      </th>
+                                      <th className="border px-3 py-2 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                                        Validação
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {calibracao.leituras.map((leitura) => (
+                                      <tr key={leitura.id}>
+                                        <td className="border px-3 py-2 text-sm text-slate-700">
+                                          {leitura.leituraPadrao}
+                                        </td>
+                                        <td className="border px-3 py-2 text-sm text-slate-700">
+                                          {leitura.leituraInstrumento}
+                                        </td>
+                                        <td className="border px-3 py-2 text-sm text-slate-700">
+                                          {leitura.erroEncontrado}
+                                        </td>
+                                        <td className="border px-3 py-2 text-sm text-slate-700">
+                                          {leitura.toleranciaMinima}
+                                        </td>
+                                        <td className="border px-3 py-2 text-sm text-slate-700">
+                                          {leitura.toleranciaMaxima}
+                                        </td>
+                                        <td className="border px-3 py-2 text-sm">
+                                          <span
+                                            className={`rounded-full px-3 py-1 text-xs font-medium ${
+                                              leitura.validado
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-red-100 text-red-700"
+                                            }`}
+                                          >
+                                            {leitura.validado ? "VALIDADO" : "NÃO VALIDADO"}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        </Fragment>
                       ))}
                     </tbody>
                   </table>

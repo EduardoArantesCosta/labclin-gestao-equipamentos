@@ -28,6 +28,11 @@ export async function GET(_: Request, { params }: Params) {
           },
           include: {
             empresa: true,
+            leituras: {
+              orderBy: {
+                createdAt: "asc",
+              },
+            },
           },
         },
         historicosStatus: {
@@ -63,7 +68,7 @@ export async function GET(_: Request, { params }: Params) {
         if (diferencaEmDias <= 30) {
           situacao = "PROXIMO_DO_VENCIMENTO";
         } else {
-          situacao = "OK";
+          situacao = "CALIBRADO";
         }
       }
     }
@@ -98,10 +103,16 @@ export async function PUT(request: Request, { params }: Params) {
     const localizacao = body.localizacao?.trim();
     const observacao = body.observacao?.trim() || null;
     const statusOperacional = body.statusOperacional;
+    const limiteErro = Number(body.limiteErro);
+
     const tipoId = Number(body.tipoId);
     const marcaId = Number(body.marcaId);
     const intervaloId = Number(body.intervaloId);
     const ativo = body.ativo;
+
+    if (isNaN(limiteErro) || limiteErro < 0) {
+      return Response.json({ message: "Limite de erro inválido" }, { status: 400 });
+    }
 
     if (!codigo) {
       return Response.json({ message: "Código é obrigatório" }, { status: 400 });
@@ -187,6 +198,7 @@ export async function PUT(request: Request, { params }: Params) {
           numeroSerie,
           localizacao,
           observacao,
+          limiteErro,
           statusOperacional,
           tipoId,
           marcaId,

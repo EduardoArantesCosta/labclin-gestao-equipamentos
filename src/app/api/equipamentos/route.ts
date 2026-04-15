@@ -70,10 +70,16 @@ export async function POST(request: Request) {
     const numeroSerie = body.numeroSerie?.trim();
     const localizacao = body.localizacao?.trim();
     const observacao = body.observacao?.trim() || null;
+    const statusOperacional = body.statusOperacional;
+    const limiteErro = Number(body.limiteErro);
 
     const tipoId = Number(body.tipoId);
     const marcaId = Number(body.marcaId);
     const intervaloId = Number(body.intervaloId);
+
+    if (!codigo) {
+      return Response.json({ message: "Código é obrigatório" }, { status: 400 });
+    }
 
     if (!numeroSerie) {
       return Response.json({ message: "Número de série é obrigatório" }, { status: 400 });
@@ -83,8 +89,14 @@ export async function POST(request: Request) {
       return Response.json({ message: "Localização é obrigatória" }, { status: 400 });
     }
 
-    if (!codigo) {
-      return Response.json({ message: "Código é obrigatório" }, { status: 400 });
+    if (isNaN(limiteErro) || limiteErro < 0) {
+      return Response.json({ message: "Limite de erro inválido" }, { status: 400 });
+    }
+
+    const statusPermitidos = ["AGUARDANDO_CALIBRACAO", "EM_CALIBRACAO", "DISPONIVEL", "EM_USO"];
+
+    if (!statusPermitidos.includes(statusOperacional)) {
+      return Response.json({ message: "Status operacional inválido" }, { status: 400 });
     }
 
     if (isNaN(tipoId)) {
@@ -140,6 +152,8 @@ export async function POST(request: Request) {
         numeroSerie,
         localizacao,
         observacao,
+        limiteErro,
+        statusOperacional,
         tipoId,
         marcaId,
         intervaloId,
