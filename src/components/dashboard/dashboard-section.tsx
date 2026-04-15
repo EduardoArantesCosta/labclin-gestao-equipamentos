@@ -1,20 +1,20 @@
-import { ReactNode } from "react";
+import { ReactNode } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 type DashboardSectionProps = {
-  titulo: string;
-  descricao?: string;
-  children: ReactNode;
-};
+  titulo: string
+  descricao?: string
+  children: ReactNode
+}
 
 export function DashboardSection({ titulo, descricao, children }: DashboardSectionProps) {
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">{titulo}</h2>
-        {descricao ? <p className="mt-1 text-sm text-gray-600">{descricao}</p> : null}
-      </div>
-
-      {children}
-    </section>
-  );
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg">{titulo}</CardTitle>
+        {descricao && <CardDescription>{descricao}</CardDescription>}
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  )
 }
