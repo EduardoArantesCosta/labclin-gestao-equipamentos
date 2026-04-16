@@ -9,7 +9,13 @@ type EmpresaCalibracao = {
 };
 
 async function getEmpresas(): Promise<EmpresaCalibracao[]> {
-  const response = await fetch("http://localhost:3000/api/empresas-calibracao", {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_APP_URL não está configurada");
+  }
+
+  const response = await fetch(`${baseUrl}/api/empresas-calibracao`, {
     cache: "no-store",
   });
 
