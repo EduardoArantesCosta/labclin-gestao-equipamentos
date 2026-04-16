@@ -123,21 +123,6 @@ export function EmpresasCalibracaoManager({ initialEmpresas }: Props) {
     }
   }
 
-  async function inativarEmpresa(id: number) {
-    const confirmed = window.confirm("Deseja inativar esta empresa?");
-    if (!confirmed) return;
-
-    const response = await fetch(`/api/empresas-calibracao/${id}`, {
-      method: "DELETE",
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      setEmpresas((prev) => prev.map((empresa) => (empresa.id === data.id ? data : empresa)));
-    }
-  }
-
   return (
     <main className="min-h-screen bg-slate-100">
       <div className="mx-auto w-full max-w-4xl px-6 py-4">
@@ -206,7 +191,7 @@ export function EmpresasCalibracaoManager({ initialEmpresas }: Props) {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="rounded-lg bg-[#523178] px-4 py-2 text-sm font-medium text-white"
+                    className="rounded-lg bg-[#583481] px-4 py-2 text-sm font-medium text-white"
                   >
                     {loading ? "Salvando..." : editandoId ? "Salvar alterações" : "Cadastrar"}
                   </button>
