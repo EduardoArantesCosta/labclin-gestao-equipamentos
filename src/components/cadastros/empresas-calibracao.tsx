@@ -82,6 +82,47 @@ export function EmpresasCalibracaoManager({ initialEmpresas }: Props) {
     }
   }
 
+  async function alternarStatusEmpresa() {
+    if (!editandoId) return;
+
+    setErro("");
+    setLoading(true);
+
+    try {
+      const response = await fetch(`/api/empresas-calibracao/${editandoId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nome,
+          contato,
+          ativo: !ativo,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErro(data.message || "Erro ao alterar status da empresa");
+        setLoading(false);
+        return;
+      }
+
+      setEmpresas((prev) => prev.map((empresa) => (empresa.id === data.id ? data : empresa)));
+
+      setNome("");
+      setContato("");
+      setAtivo(true);
+      setEditandoId(null);
+      setErro("");
+    } catch {
+      setErro("Erro ao alterar status da empresa");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function inativarEmpresa(id: number) {
     const confirmed = window.confirm("Deseja inativar esta empresa?");
     if (!confirmed) return;
@@ -161,27 +202,36 @@ export function EmpresasCalibracaoManager({ initialEmpresas }: Props) {
                   </div>
                 ) : null}
 
-                <div className="flex items-center gap-3">
+                <div className="flex gap-3 md:col-span-2">
                   <button
                     type="submit"
                     disabled={loading}
-                    className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-lg bg-[#523178] px-4 py-2 text-sm font-medium text-white"
                   >
-                    {loading
-                      ? "Salvando..."
-                      : editandoId
-                        ? "Salvar alterações"
-                        : "Cadastrar empresa"}
+                    {loading ? "Salvando..." : editandoId ? "Salvar alterações" : "Cadastrar"}
                   </button>
 
                   {editandoId ? (
-                    <button
-                      type="button"
-                      onClick={cancelarEdicao}
-                      className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                    >
-                      Cancelar
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={cancelarEdicao}
+                        className="rounded-lg border px-4 py-2 text-sm"
+                      >
+                        Cancelar
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={alternarStatusEmpresa}
+                        disabled={loading}
+                        className={`rounded-lg border px-4 py-2 text-sm font-medium ${
+                          ativo ? "border-red-200 text-red-700" : "border-green-200 text-green-700"
+                        }`}
+                      >
+                        {ativo ? "Inativar empresa" : "Reativar empresa"}
+                      </button>
+                    </>
                   ) : null}
                 </div>
               </form>
@@ -208,7 +258,7 @@ export function EmpresasCalibracaoManager({ initialEmpresas }: Props) {
 
                   <tbody className="divide-y divide-slate-200">
                     {empresas.map((empresa) => (
-                      <tr key={empresa.id} className="transition hover:bg-slate-50">
+                      <tr key={empresa.id}>
                         <td className="px-6 py-4 text-slate-700 uppercase">{empresa.nome}</td>
                         <td className="px-6 py-4 text-slate-700 uppercase">
                           {empresa.contato || "-"}
@@ -216,25 +266,14 @@ export function EmpresasCalibracaoManager({ initialEmpresas }: Props) {
                         <td className="px-6 py-4 text-slate-700">
                           {empresa.ativo ? "Sim" : "Não"}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-wrap gap-2">
+                        <td className="px-4 py-3">
+                          <div className="flex gap-2">
                             <button
-                              type="button"
                               onClick={() => iniciarEdicao(empresa)}
-                              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs hover:bg-gray-100"
                             >
                               Editar
                             </button>
-
-                            {empresa.ativo ? (
-                              <button
-                                type="button"
-                                onClick={() => inativarEmpresa(empresa.id)}
-                                className="rounded-xl border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50"
-                              >
-                                Inativar
-                              </button>
-                            ) : null}
                           </div>
                         </td>
                       </tr>
