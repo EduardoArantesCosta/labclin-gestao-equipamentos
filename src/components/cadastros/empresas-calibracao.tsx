@@ -7,7 +7,7 @@ type EmpresaCalibracao = {
   nome: string;
   contato: string | null;
   ativo: boolean;
-  createdAt: string;
+  createdAt: Date;
 };
 
 type Props = {
