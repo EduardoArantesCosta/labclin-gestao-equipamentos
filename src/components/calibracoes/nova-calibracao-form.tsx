@@ -25,7 +25,7 @@ export function NovaCalibracaoForm({ equipamentoId, empresas }: Props) {
   const [dataValidade, setDataValidade] = useState("");
   const [numeroCertificado, setNumeroCertificado] = useState("");
   const [empresaId, setEmpresaId] = useState(empresas[0]?.id ? String(empresas[0].id) : "");
-
+  const [certificadoArquivo, setCertificadoArquivo] = useState<File | null>(null);
   const [certificadoNome, setCertificadoNome] = useState("");
   const [certificadoUrl, setCertificadoUrl] = useState("");
 
@@ -56,24 +56,30 @@ export function NovaCalibracaoForm({ equipamentoId, empresas }: Props) {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/calibracoes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          dataCalibracao,
-          dataValidade,
-          numeroCertificado,
-          certificadoNome,
-          certificadoUrl,
-          equipamentoId,
-          empresaId: Number(empresaId),
-          leituras: leituras.map((leitura) => ({
+      const formData = new FormData();
+
+      formData.append("dataCalibracao", dataCalibracao);
+      formData.append("dataValidade", dataValidade);
+      formData.append("numeroCertificado", numeroCertificado);
+      formData.append("equipamentoId", String(equipamentoId));
+      formData.append("empresaId", String(empresaId));
+      formData.append(
+        "leituras",
+        JSON.stringify(
+          leituras.map((leitura) => ({
             leituraPadrao: Number(leitura.leituraPadrao),
             leituraInstrumento: Number(leitura.leituraInstrumento),
           })),
-        }),
+        ),
+      );
+
+      if (certificadoArquivo) {
+        formData.append("certificado", certificadoArquivo);
+      }
+
+      const response = await fetch("/api/calibracoes", {
+        method: "POST",
+        body: formData,
       });
 
       const data = await response.json();
@@ -173,8 +179,13 @@ export function NovaCalibracaoForm({ equipamentoId, empresas }: Props) {
             accept=".pdf,.jpg,.jpeg,.png"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (!file) return;
+              if (!file) {
+                setCertificadoArquivo(null);
+                setCertificadoNome("");
+                return;
+              }
 
+              setCertificadoArquivo(file);
               setCertificadoNome(file.name);
             }}
             className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200"

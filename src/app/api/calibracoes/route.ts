@@ -34,17 +34,41 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const formData = await request.formData();
 
-    const dataCalibracao = body.dataCalibracao;
-    const dataValidade = body.dataValidade;
-    const numeroCertificado = body.numeroCertificado?.trim();
-    const certificadoUrl = body.certificadoUrl || null;
-    const certificadoNome = body.certificadoNome || null;
+    const dataCalibracao = formData.get("dataCalibracao") as string;
+    const dataValidade = formData.get("dataValidade") as string;
+    const numeroCertificado = (formData.get("numeroCertificado") as string)?.trim();
 
-    const equipamentoId = Number(body.equipamentoId);
-    const empresaId = Number(body.empresaId);
-    const leituras = body.leituras as LeituraInput[];
+    const equipamentoId = Number(formData.get("equipamentoId"));
+    const empresaId = Number(formData.get("empresaId"));
+
+    const leiturasJson = formData.get("leituras") as string;
+    const leituras = JSON.parse(leiturasJson) as LeituraInput[];
+
+    const arquivo = formData.get("certificado") as File | null;
+
+    let certificadoNome: string | null = null;
+    let certificadoUrl: string | null = null;
+
+    // 👇 aqui entra o arquivo
+    if (arquivo && arquivo.size > 0) {
+      certificadoNome = arquivo.name;
+
+      // 🔥 TEMPORÁRIO (Railway sem storage externo ainda)
+      const bytes = await arquivo.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      const fileName = `${Date.now()}-${arquivo.name}`;
+      const path = `./public/uploads/${fileName}`;
+
+      const fs = await import("fs/promises");
+      await fs.writeFile(path, buffer);
+
+      certificadoUrl = `/uploads/${fileName}`;
+    }
+
+    // ================= VALIDAÇÕES =================
 
     if (!dataCalibracao) {
       return Response.json({ message: "Data da calibração é obrigatória" }, { status: 400 });
@@ -104,6 +128,8 @@ export async function POST(request: Request) {
       return Response.json({ message: "Empresa de calibração não encontrada" }, { status: 404 });
     }
 
+    // ================= CÁLCULO =================
+
     const limiteErro = equipamentoExiste.limiteErro;
 
     const leiturasCalculadas = leituras.map((leitura) => {
@@ -126,6 +152,8 @@ export async function POST(request: Request) {
       };
     });
 
+    // ================= TRANSACTION =================
+
     const resultado = await prisma.$transaction(async (tx) => {
       const novaCalibracao = await tx.calibracao.create({
         data: {
@@ -133,34 +161,24 @@ export async function POST(request: Request) {
           dataValidade: parseDateOnly(dataValidade),
           numeroCertificado,
           equipamentoId,
-          certificadoUrl,
-          certificadoNome,
           empresaId,
+          certificadoNome,
+          certificadoUrl,
           leituras: {
             create: leiturasCalculadas,
           },
         },
-        include: {
-          equipamento: true,
-          empresa: true,
-          leituras: true,
-        },
       });
-
-      const statusAnterior = equipamentoExiste.statusOperacional;
-      const statusNovo = "DISPONIVEL";
 
       await tx.equipamento.update({
         where: { id: equipamentoId },
-        data: {
-          statusOperacional: statusNovo,
-        },
+        data: { statusOperacional: "DISPONIVEL" },
       });
 
       await tx.historicoStatus.create({
         data: {
-          statusAnterior,
-          statusNovo,
+          statusAnterior: equipamentoExiste.statusOperacional,
+          statusNovo: "DISPONIVEL",
           equipamentoId,
         },
       });
@@ -171,7 +189,6 @@ export async function POST(request: Request) {
     return Response.json(resultado, { status: 201 });
   } catch (error) {
     console.error("Erro ao criar calibração:", error);
-
     return Response.json({ message: "Erro interno do servidor" }, { status: 500 });
   }
 }
