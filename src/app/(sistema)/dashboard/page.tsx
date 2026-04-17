@@ -1,56 +1,21 @@
+import Link from "next/link";
 import { prisma } from "@/src/lib/prisma";
-import { EquipamentosTable } from "@/src/components/equipamentos/equipamentos-table";
+import { DashboardCard } from "../../../components/dashboard/dashboard-card";
+import { DashboardSection } from "../../../components/dashboard/dashboard-section";
+import { formatarDataBR } from "../../..//lib/dashboard";
+import type { DashboardEquipamentoCritico, DashboardResponse } from "../../../types/dashboard";
 
-type TipoEquipamento = {
-  id: number;
-  nome: string;
-};
-
-type Marca = {
-  id: number;
-  nome: string;
-};
-
-type IntervaloCalibracao = {
-  id: number;
-  nome: string;
-  dias: number | null;
-};
-
-type Calibracao = {
-  id: number;
-  dataCalibracao: string;
-  dataValidade: string;
-  numeroCertificado: string;
-};
-
-type Equipamento = {
-  id: number;
-  codigo: string;
-  numeroSerie: string | null;
-  localizacao: string | null;
-  observacao: string | null;
-  statusOperacional: string;
-  ativo: boolean;
-  createdAt: string;
-  situacao: string;
-  tipo: TipoEquipamento;
-  limiteErro: number | null;
-  marca: Marca;
-  intervalo: IntervaloCalibracao;
-  ultimaCalibracao: Calibracao | null;
-};
-
-async function getEquipamentos(): Promise<Equipamento[]> {
+async function buscarDashboard(): Promise<DashboardResponse | null> {
   try {
+    const hoje = new Date();
+    const em30Dias = new Date();
+    em30Dias.setDate(hoje.getDate() + 30);
+
     const equipamentos = await prisma.equipamento.findMany({
-      orderBy: {
-        codigo: "asc",
+      where: {
+        ativo: true,
       },
       include: {
-        tipo: true,
-        marca: true,
-        intervalo: true,
         calibracoes: {
           orderBy: {
             dataCalibracao: "desc",
@@ -60,81 +25,253 @@ async function getEquipamentos(): Promise<Equipamento[]> {
       },
     });
 
-    const hoje = new Date();
+    const totalAtivos = equipamentos.length;
 
-    return equipamentos.map((equipamento) => {
-      const ultima = equipamento.calibracoes[0] ?? null;
+    let vencidos = 0;
+    let proximosDoVencimento = 0;
+    let ok = 0;
+    let emCalibracao = 0;
 
-      let situacao = "OK";
+    const vencendoEmBreve: DashboardEquipamentoCritico[] = [];
 
-      if (equipamento.statusOperacional === "EM_CALIBRACAO") {
-        situacao = "EM_CALIBRACAO";
-      } else if (ultima?.dataValidade) {
-        const validade = new Date(ultima.dataValidade);
+    for (const eq of equipamentos) {
+      const ultima = eq.calibracoes[0];
 
-        if (validade < hoje) {
-          situacao = "VENCIDO";
-        } else {
-          const diasRestantes = Math.ceil(
-            (validade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24),
-          );
-
-          if (diasRestantes <= 30) {
-            situacao = "PROXIMO_DO_VENCIMENTO";
-          }
-        }
+      if (eq.statusOperacional === "EM_CALIBRACAO") {
+        emCalibracao++;
+        continue;
       }
 
-      return {
-        id: equipamento.id,
-        codigo: equipamento.codigo,
-        numeroSerie: equipamento.numeroSerie,
-        localizacao: equipamento.localizacao,
-        observacao: equipamento.observacao,
-        statusOperacional: equipamento.statusOperacional,
-        ativo: equipamento.ativo,
-        createdAt: equipamento.createdAt.toISOString(),
-        situacao,
-        tipo: {
-          id: equipamento.tipo.id,
-          nome: equipamento.tipo.nome,
-        },
-        limiteErro: equipamento.limiteErro,
-        marca: {
-          id: equipamento.marca.id,
-          nome: equipamento.marca.nome,
-        },
-        intervalo: {
-          id: equipamento.intervalo.id,
-          nome: equipamento.intervalo.nome,
-          dias: equipamento.intervalo.dias,
-        },
-        ultimaCalibracao: ultima
-          ? {
-              id: ultima.id,
-              dataCalibracao: ultima.dataCalibracao.toISOString(),
-              dataValidade: ultima.dataValidade.toISOString(),
-              numeroCertificado: ultima.numeroCertificado,
-            }
-          : null,
-      };
+      if (!ultima?.dataValidade) continue;
+
+      const validade = new Date(ultima.dataValidade);
+
+      if (validade < hoje) {
+        vencidos++;
+        vencendoEmBreve.push({
+          id: eq.id,
+          codigo: eq.codigo,
+          numeroSerie: eq.numeroSerie,
+          localizacao: eq.localizacao,
+          dataValidade: validade.toISOString(),
+          situacao: "VENCIDO",
+        });
+      } else if (validade <= em30Dias) {
+        proximosDoVencimento++;
+        vencendoEmBreve.push({
+          id: eq.id,
+          codigo: eq.codigo,
+          numeroSerie: eq.numeroSerie,
+          localizacao: eq.localizacao,
+          dataValidade: validade.toISOString(),
+          situacao: "PROXIMO_DO_VENCIMENTO",
+        });
+      } else {
+        ok++;
+      }
+    }
+
+    const ultimasCalibracoesRaw = await prisma.calibracao.findMany({
+      orderBy: {
+        dataCalibracao: "desc",
+      },
+      take: 10,
+      include: {
+        equipamento: true,
+        empresa: true,
+      },
     });
+
+    const ultimasCalibracoes = ultimasCalibracoesRaw.map((c) => ({
+      id: c.id,
+      codigo: c.equipamento.codigo,
+      numeroCertificado: c.numeroCertificado,
+      empresa: c.empresa.nome,
+      dataCalibracao: c.dataCalibracao.toISOString(),
+      equipamentoId: c.equipamentoId,
+    }));
+
+    return {
+      totalAtivos,
+      vencidos,
+      proximosDoVencimento,
+      ok,
+      emCalibracao,
+      vencendoEmBreve,
+      ultimasCalibracoes,
+    };
   } catch (error) {
-    console.error("Erro ao buscar equipamentos:", error);
-    throw new Error("Erro ao buscar equipamentos");
+    console.error("Erro ao buscar dashboard:", error);
+    return null;
   }
 }
 
-export default async function EquipamentosPage() {
-  const equipamentos = await getEquipamentos();
+function getSituacaoBadgeClasses(situacao: string) {
+  if (situacao === "VENCIDO") {
+    return "bg-red-100 text-red-700";
+  }
+
+  if (situacao === "PROXIMO_DO_VENCIMENTO") {
+    return "bg-yellow-100 text-yellow-700";
+  }
+
+  if (situacao === "EM_CALIBRACAO") {
+    return "bg-blue-100 text-blue-700";
+  }
+
+  return "bg-green-100 text-green-700";
+}
+
+function getSituacaoLabel(situacao: string) {
+  if (situacao === "PROXIMO_DO_VENCIMENTO") {
+    return "Próximo do vencimento";
+  }
+
+  if (situacao === "EM_CALIBRACAO") {
+    return "Em calibração";
+  }
+
+  if (situacao === "VENCIDO") {
+    return "Vencido";
+  }
+
+  return "OK";
+}
+
+export default async function DashboardPage() {
+  const data = await buscarDashboard();
+
+  if (!data) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-6">
+          <h1 className="text-xl font-semibold text-red-700">Erro ao carregar dashboard</h1>
+          <p className="mt-2 text-sm text-red-600">Não foi possível buscar os dados do painel.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <main className="p-6">
-      <div className="flex justify-center">
-        <h1 className="mb-6 text-center text-2xl font-bold">GESTÃO DE EQUIPAMENTOS</h1>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold text-slate-900">Dashboard de Equipamentos</h1>
+        <p className="text-sm text-slate-600">
+          Visão geral do controle de calibração e situação dos equipamentos.
+        </p>
       </div>
 
-      <EquipamentosTable equipamentos={equipamentos} />
-    </main>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <DashboardCard
+          titulo="Equipamentos ativos"
+          valor={data.totalAtivos}
+          descricao="Total de equipamentos em uso no sistema"
+        />
+
+        <DashboardCard
+          titulo="Vencidos"
+          valor={data.vencidos}
+          descricao="Equipamentos com calibração vencida"
+        />
+
+        <DashboardCard
+          titulo="Próximos do vencimento"
+          valor={data.proximosDoVencimento}
+          descricao="Equipamentos que vencem em até 30 dias"
+        />
+
+        <DashboardCard titulo="OK" valor={data.ok} descricao="Equipamentos com validade em dia" />
+
+        <DashboardCard
+          titulo="Em calibração"
+          valor={data.emCalibracao}
+          descricao="Equipamentos temporariamente indisponíveis"
+        />
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <DashboardSection
+          titulo="Equipamentos críticos"
+          descricao="Equipamentos vencidos ou próximos do vencimento"
+        >
+          {data.vencendoEmBreve.length === 0 ? (
+            <p className="text-sm text-slate-500">Nenhum equipamento crítico encontrado.</p>
+          ) : (
+            <div className="space-y-3">
+              {data.vencendoEmBreve.map((equipamento) => (
+                <div key={equipamento.id} className="rounded-lg border border-slate-200 p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-slate-900">{equipamento.codigo}</p>
+                      <p className="text-sm text-slate-600">
+                        Série: {equipamento.numeroSerie || "-"}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        Localização: {equipamento.localizacao || "-"}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        Validade: {formatarDataBR(equipamento.dataValidade)}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col items-start gap-2 md:items-end">
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${getSituacaoBadgeClasses(
+                          equipamento.situacao,
+                        )}`}
+                      >
+                        {getSituacaoLabel(equipamento.situacao)}
+                      </span>
+
+                      <Link
+                        href={`/equipamentos/${equipamento.id}`}
+                        className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                      >
+                        Ver equipamento
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DashboardSection>
+
+        <DashboardSection
+          titulo="Últimas calibrações"
+          descricao="Registros mais recentes de calibração"
+        >
+          {data.ultimasCalibracoes.length === 0 ? (
+            <p className="text-sm text-slate-500">Nenhuma calibração encontrada.</p>
+          ) : (
+            <div className="space-y-3">
+              {data.ultimasCalibracoes.map((calibracao) => (
+                <div key={calibracao.id} className="rounded-lg border border-slate-200 p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-slate-900">{calibracao.codigo}</p>
+                      <p className="text-sm text-slate-600">
+                        Certificado: {calibracao.numeroCertificado}
+                      </p>
+                      <p className="text-sm text-slate-600">Empresa: {calibracao.empresa}</p>
+                      <p className="text-sm text-slate-600">
+                        Data da calibração: {formatarDataBR(calibracao.dataCalibracao)}
+                      </p>
+                    </div>
+
+                    <Link
+                      href={`/equipamentos/${calibracao.equipamentoId}`}
+                      className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                    >
+                      Ver equipamento
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DashboardSection>
+      </section>
+    </div>
   );
 }
