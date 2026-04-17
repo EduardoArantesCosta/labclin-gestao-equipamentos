@@ -1,3 +1,4 @@
+import { prisma } from "@/src/lib/prisma";
 import { EditarEquipamentoForm } from "@/src/components/equipamentos/editar-equipamento-form";
 
 type TipoEquipamento = {
@@ -34,51 +35,113 @@ type Equipamento = {
 };
 
 async function getEquipamento(id: string): Promise<Equipamento> {
-  const response = await fetch(`http://localhost:3000/api/equipamentos/${id}`, {
-    cache: "no-store",
-  });
+  try {
+    const equipamento = await prisma.equipamento.findUnique({
+      where: {
+        id: Number(id),
+      },
+      include: {
+        tipo: true,
+        marca: true,
+        intervalo: true,
+      },
+    });
 
-  if (!response.ok) {
+    if (!equipamento) {
+      throw new Error("Equipamento não encontrado");
+    }
+
+    return {
+      id: equipamento.id,
+      codigo: equipamento.codigo,
+      numeroSerie: equipamento.numeroSerie,
+      localizacao: equipamento.localizacao,
+      observacao: equipamento.observacao,
+      statusOperacional: equipamento.statusOperacional,
+      ativo: equipamento.ativo,
+      tipoId: equipamento.tipoId,
+      limiteErro: equipamento.limiteErro,
+      marcaId: equipamento.marcaId,
+      intervaloId: equipamento.intervaloId,
+      tipo: {
+        id: equipamento.tipo.id,
+        nome: equipamento.tipo.nome,
+      },
+      marca: {
+        id: equipamento.marca.id,
+        nome: equipamento.marca.nome,
+      },
+      intervalo: {
+        id: equipamento.intervalo.id,
+        nome: equipamento.intervalo.nome,
+        dias: equipamento.intervalo.dias,
+      },
+    };
+  } catch (error) {
+    console.error("Erro ao buscar equipamento:", error);
     throw new Error("Erro ao buscar equipamento");
   }
-
-  return response.json();
 }
 
 async function getTipos(): Promise<TipoEquipamento[]> {
-  const response = await fetch("http://localhost:3000/api/tipos-equipamento", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
+  try {
+    return await prisma.tipoEquipamento.findMany({
+      where: {
+        ativo: true,
+      },
+      orderBy: {
+        nome: "asc",
+      },
+      select: {
+        id: true,
+        nome: true,
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao buscar tipos de equipamento:", error);
     throw new Error("Erro ao buscar tipos de equipamento");
   }
-
-  return response.json();
 }
 
 async function getMarcas(): Promise<Marca[]> {
-  const response = await fetch("http://localhost:3000/api/marcas", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
+  try {
+    return await prisma.marca.findMany({
+      where: {
+        ativo: true,
+      },
+      orderBy: {
+        nome: "asc",
+      },
+      select: {
+        id: true,
+        nome: true,
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao buscar marcas:", error);
     throw new Error("Erro ao buscar marcas");
   }
-
-  return response.json();
 }
 
 async function getIntervalos(): Promise<IntervaloCalibracao[]> {
-  const response = await fetch("http://localhost:3000/api/intervalos-calibracao", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
+  try {
+    return await prisma.intervaloCalibracao.findMany({
+      where: {
+        ativo: true,
+      },
+      orderBy: {
+        nome: "asc",
+      },
+      select: {
+        id: true,
+        nome: true,
+        dias: true,
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao buscar intervalos:", error);
     throw new Error("Erro ao buscar intervalos");
   }
-
-  return response.json();
 }
 
 export default async function EditarEquipamentoPage({

@@ -1,5 +1,5 @@
+import { prisma } from "@/src/lib/prisma";
 import { EquipamentosTable } from "@/src/components/equipamentos/equipamentos-table";
-import Link from "next/link";
 
 type TipoEquipamento = {
   id: number;
@@ -42,15 +42,87 @@ type Equipamento = {
 };
 
 async function getEquipamentos(): Promise<Equipamento[]> {
-  const response = await fetch("http://localhost:3000/api/equipamentos", {
-    cache: "no-store",
-  });
+  try {
+    const equipamentos = await prisma.equipamento.findMany({
+      orderBy: {
+        codigo: "asc",
+      },
+      include: {
+        tipo: true,
+        marca: true,
+        intervalo: true,
+        calibracoes: {
+          orderBy: {
+            dataCalibracao: "desc",
+          },
+          take: 1,
+        },
+      },
+    });
 
-  if (!response.ok) {
+    const hoje = new Date();
+
+    return equipamentos.map((equipamento) => {
+      const ultima = equipamento.calibracoes[0] ?? null;
+
+      let situacao = "OK";
+
+      if (equipamento.statusOperacional === "EM_CALIBRACAO") {
+        situacao = "EM_CALIBRACAO";
+      } else if (ultima?.dataValidade) {
+        const validade = new Date(ultima.dataValidade);
+
+        if (validade < hoje) {
+          situacao = "VENCIDO";
+        } else {
+          const diasRestantes = Math.ceil(
+            (validade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24),
+          );
+
+          if (diasRestantes <= 30) {
+            situacao = "PROXIMO_DO_VENCIMENTO";
+          }
+        }
+      }
+
+      return {
+        id: equipamento.id,
+        codigo: equipamento.codigo,
+        numeroSerie: equipamento.numeroSerie,
+        localizacao: equipamento.localizacao,
+        observacao: equipamento.observacao,
+        statusOperacional: equipamento.statusOperacional,
+        ativo: equipamento.ativo,
+        createdAt: equipamento.createdAt.toISOString(),
+        situacao,
+        tipo: {
+          id: equipamento.tipo.id,
+          nome: equipamento.tipo.nome,
+        },
+        limiteErro: equipamento.limiteErro,
+        marca: {
+          id: equipamento.marca.id,
+          nome: equipamento.marca.nome,
+        },
+        intervalo: {
+          id: equipamento.intervalo.id,
+          nome: equipamento.intervalo.nome,
+          dias: equipamento.intervalo.dias,
+        },
+        ultimaCalibracao: ultima
+          ? {
+              id: ultima.id,
+              dataCalibracao: ultima.dataCalibracao.toISOString(),
+              dataValidade: ultima.dataValidade.toISOString(),
+              numeroCertificado: ultima.numeroCertificado,
+            }
+          : null,
+      };
+    });
+  } catch (error) {
+    console.error("Erro ao buscar equipamentos:", error);
     throw new Error("Erro ao buscar equipamentos");
   }
-
-  return response.json();
 }
 
 export default async function EquipamentosPage() {

@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { prisma } from "@/src/lib/prisma";
 
 type TipoEquipamento = {
   id: number;
@@ -67,15 +68,138 @@ type Equipamento = {
 };
 
 async function getEquipamento(id: string): Promise<Equipamento> {
-  const response = await fetch(`http://localhost:3000/api/equipamentos/${id}`, {
-    cache: "no-store",
-  });
+  try {
+    const equipamento = await prisma.equipamento.findUnique({
+      where: {
+        id: Number(id),
+      },
+      include: {
+        tipo: true,
+        marca: true,
+        intervalo: true,
+        calibracoes: {
+          orderBy: {
+            dataCalibracao: "desc",
+          },
+          include: {
+            empresa: true,
+            leituras: true,
+          },
+        },
+        historicosStatus: {
+          orderBy: {
+            dataAlteracao: "desc",
+          },
+        },
+      },
+    });
 
-  if (!response.ok) {
+    if (!equipamento) {
+      throw new Error("Equipamento não encontrado");
+    }
+
+    const hoje = new Date();
+
+    const ultima = equipamento.calibracoes[0] ?? null;
+
+    let situacao = "OK";
+
+    if (equipamento.statusOperacional === "EM_CALIBRACAO") {
+      situacao = "EM_CALIBRACAO";
+    } else if (ultima?.dataValidade) {
+      const validade = new Date(ultima.dataValidade);
+
+      if (validade < hoje) {
+        situacao = "VENCIDO";
+      } else {
+        const diasRestantes = Math.ceil(
+          (validade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24),
+        );
+
+        if (diasRestantes <= 30) {
+          situacao = "PROXIMO_DO_VENCIMENTO";
+        }
+      }
+    }
+
+    return {
+      id: equipamento.id,
+      codigo: equipamento.codigo,
+      numeroSerie: equipamento.numeroSerie,
+      localizacao: equipamento.localizacao,
+      observacao: equipamento.observacao,
+      statusOperacional: equipamento.statusOperacional,
+      ativo: equipamento.ativo,
+      createdAt: equipamento.createdAt.toISOString(),
+      limiteErro: equipamento.limiteErro,
+      situacao,
+      tipo: {
+        id: equipamento.tipo.id,
+        nome: equipamento.tipo.nome,
+      },
+      marca: {
+        id: equipamento.marca.id,
+        nome: equipamento.marca.nome,
+      },
+      intervalo: {
+        id: equipamento.intervalo.id,
+        nome: equipamento.intervalo.nome,
+        dias: equipamento.intervalo.dias,
+      },
+
+      ultimaCalibracao: ultima
+        ? {
+            id: ultima.id,
+            dataCalibracao: ultima.dataCalibracao.toISOString(),
+            dataValidade: ultima.dataValidade.toISOString(),
+            numeroCertificado: ultima.numeroCertificado,
+            empresa: {
+              id: ultima.empresa.id,
+              nome: ultima.empresa.nome,
+            },
+            leituras: ultima.leituras.map((l) => ({
+              id: l.id,
+              leituraPadrao: l.leituraPadrao,
+              leituraInstrumento: l.leituraInstrumento,
+              erroEncontrado: l.erroEncontrado,
+              toleranciaMinima: l.toleranciaMinima,
+              toleranciaMaxima: l.toleranciaMaxima,
+              validado: l.validado,
+            })),
+          }
+        : null,
+
+      calibracoes: equipamento.calibracoes.map((c) => ({
+        id: c.id,
+        dataCalibracao: c.dataCalibracao.toISOString(),
+        dataValidade: c.dataValidade.toISOString(),
+        numeroCertificado: c.numeroCertificado,
+        empresa: {
+          id: c.empresa.id,
+          nome: c.empresa.nome,
+        },
+        leituras: c.leituras.map((l) => ({
+          id: l.id,
+          leituraPadrao: l.leituraPadrao,
+          leituraInstrumento: l.leituraInstrumento,
+          erroEncontrado: l.erroEncontrado,
+          toleranciaMinima: l.toleranciaMinima,
+          toleranciaMaxima: l.toleranciaMaxima,
+          validado: l.validado,
+        })),
+      })),
+
+      historicosStatus: equipamento.historicosStatus.map((h) => ({
+        id: h.id,
+        statusAnterior: h.statusAnterior,
+        statusNovo: h.statusNovo,
+        dataAlteracao: h.dataAlteracao.toISOString(),
+      })),
+    };
+  } catch (error) {
+    console.error("Erro ao buscar equipamento:", error);
     throw new Error("Erro ao buscar equipamento");
   }
-
-  return response.json();
 }
 
 function formatarSituacao(situacao: string) {

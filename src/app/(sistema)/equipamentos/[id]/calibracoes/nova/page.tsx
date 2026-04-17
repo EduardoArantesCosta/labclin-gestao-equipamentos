@@ -1,3 +1,4 @@
+import { prisma } from "@/src/lib/prisma";
 import { NovaCalibracaoForm } from "@/src/components/calibracoes/nova-calibracao-form";
 
 type Empresa = {
@@ -12,27 +13,47 @@ type Equipamento = {
 };
 
 async function getEquipamento(id: string): Promise<Equipamento> {
-  const response = await fetch(`http://localhost:3000/api/equipamentos/${id}`, {
-    cache: "no-store",
-  });
+  try {
+    const equipamento = await prisma.equipamento.findUnique({
+      where: {
+        id: Number(id),
+      },
+      select: {
+        id: true,
+        codigo: true,
+        limiteErro: true,
+      },
+    });
 
-  if (!response.ok) {
+    if (!equipamento) {
+      throw new Error("Equipamento não encontrado");
+    }
+
+    return equipamento;
+  } catch (error) {
+    console.error("Erro ao buscar equipamento:", error);
     throw new Error("Erro ao buscar equipamento");
   }
-
-  return response.json();
 }
 
 async function getEmpresas(): Promise<Empresa[]> {
-  const response = await fetch("http://localhost:3000/api/empresas-calibracao", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
+  try {
+    return await prisma.empresaCalibracao.findMany({
+      where: {
+        ativo: true,
+      },
+      orderBy: {
+        nome: "asc",
+      },
+      select: {
+        id: true,
+        nome: true,
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao buscar empresas:", error);
     throw new Error("Erro ao buscar empresas");
   }
-
-  return response.json();
 }
 
 export default async function NovaCalibracaoPage({ params }: { params: Promise<{ id: string }> }) {
