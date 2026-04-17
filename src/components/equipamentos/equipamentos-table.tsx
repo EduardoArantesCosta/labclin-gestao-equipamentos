@@ -52,10 +52,11 @@ function getSituacaoStyle(situacao: string) {
     case "VENCIDO":
       return "inline-flex rounded-full bg-red-500 px-4 py-1 text-sm font-bold text-white";
     case "PROXIMO DO VENCIMENTO":
+    case "PRÓXIMO DO VENCIMENTO":
       return "inline-flex rounded-full bg-yellow-400 px-4 py-1 text-sm font-bold text-black";
     case "CALIBRADO":
       return "inline-flex rounded-full bg-green-500 px-4 py-1 text-sm font-bold text-white";
-    case "EM CALIBRACAO":
+    case "EM CALIBRAÇÃO":
       return "inline-flex rounded-full bg-blue-500 px-4 py-1 text-sm font-bold text-white";
     default:
       return "inline-flex rounded-full bg-gray-400 px-4 py-1 text-sm font-bold text-white";
