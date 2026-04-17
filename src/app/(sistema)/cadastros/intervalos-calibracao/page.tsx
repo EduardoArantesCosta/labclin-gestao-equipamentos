@@ -1,3 +1,4 @@
+import { prisma } from "@/src/lib/prisma";
 import { IntervalosCalibracaoManager } from "@/src/components/cadastros/intervalos-calibracao-manager";
 
 type IntervaloCalibracao = {
@@ -5,19 +6,20 @@ type IntervaloCalibracao = {
   nome: string;
   dias: number | null;
   ativo: boolean;
-  createdAt: string;
+  createdAt: Date;
 };
 
 async function getIntervalos(): Promise<IntervaloCalibracao[]> {
-  const response = await fetch("http://localhost:3000/api/intervalos-calibracao", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
+  try {
+    return await prisma.intervaloCalibracao.findMany({
+      orderBy: {
+        nome: "asc",
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao buscar intervalos de calibração:", error);
     throw new Error("Erro ao buscar intervalos de calibração");
   }
-
-  return response.json();
 }
 
 export default async function IntervalosCalibracaoPage() {

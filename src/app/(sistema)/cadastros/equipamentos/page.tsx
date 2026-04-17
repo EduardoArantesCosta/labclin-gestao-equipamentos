@@ -1,3 +1,4 @@
+import { prisma } from "@/src/lib/prisma";
 import { NovoEquipamentoForm } from "@/src/components/equipamentos/novo-equipamento-form";
 
 type TipoEquipamento = {
@@ -20,42 +21,51 @@ type IntervaloCalibracao = {
 };
 
 async function getTipos(): Promise<TipoEquipamento[]> {
-  const response = await fetch("http://localhost:3000/api/tipos-equipamento", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
+  try {
+    return await prisma.tipoEquipamento.findMany({
+      where: {
+        ativo: true,
+      },
+      orderBy: {
+        nome: "asc",
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao buscar tipos de equipamento:", error);
     throw new Error("Erro ao buscar tipos de equipamento");
   }
-
-  const tipos = await response.json();
-  return tipos.filter((tipo: TipoEquipamento) => tipo.ativo);
 }
 
 async function getMarcas(): Promise<Marca[]> {
-  const response = await fetch("http://localhost:3000/api/marcas", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
+  try {
+    return await prisma.marca.findMany({
+      where: {
+        ativo: true,
+      },
+      orderBy: {
+        nome: "asc",
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao buscar marcas:", error);
     throw new Error("Erro ao buscar marcas");
   }
-
-  const marcas = await response.json();
-  return marcas.filter((marca: Marca) => marca.ativo);
 }
 
 async function getIntervalos(): Promise<IntervaloCalibracao[]> {
-  const response = await fetch("http://localhost:3000/api/intervalos-calibracao", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
+  try {
+    return await prisma.intervaloCalibracao.findMany({
+      where: {
+        ativo: true,
+      },
+      orderBy: {
+        nome: "asc",
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao buscar intervalos de calibração:", error);
     throw new Error("Erro ao buscar intervalos de calibração");
   }
-
-  const intervalos = await response.json();
-  return intervalos.filter((intervalo: IntervaloCalibracao) => intervalo.ativo);
 }
 
 export default async function NovoEquipamentoPage() {

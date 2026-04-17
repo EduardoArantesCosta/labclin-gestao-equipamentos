@@ -1,22 +1,24 @@
+import { prisma } from "@/src/lib/prisma";
 import { MarcasManager } from "@/src/components/cadastros/marcas-manager";
 
 type Marca = {
   id: number;
   nome: string;
   ativo: boolean;
-  createdAt: string;
+  createdAt: Date;
 };
 
 async function getMarcas(): Promise<Marca[]> {
-  const response = await fetch("http://localhost:3000/api/marcas", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
+  try {
+    return await prisma.marca.findMany({
+      orderBy: {
+        nome: "asc",
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao buscar marcas:", error);
     throw new Error("Erro ao buscar marcas");
   }
-
-  return response.json();
 }
 
 export default async function MarcasPage() {

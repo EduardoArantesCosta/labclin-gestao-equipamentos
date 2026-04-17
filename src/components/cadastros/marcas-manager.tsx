@@ -7,7 +7,7 @@ type Marca = {
   id: number;
   nome: string;
   ativo: boolean;
-  createdAt: string;
+  createdAt: Date;
 };
 
 type Props = {

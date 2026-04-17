@@ -1,22 +1,24 @@
+import { prisma } from "@/src/lib/prisma";
 import { TiposEquipamentoManager } from "@/src/components/cadastros/tipos-equipamento-manager";
 
 type TipoEquipamento = {
   id: number;
   nome: string;
   ativo: boolean;
-  createdAt: string;
+  createdAt: Date;
 };
 
 async function getTiposEquipamento(): Promise<TipoEquipamento[]> {
-  const response = await fetch("http://localhost:3000/api/tipos-equipamento", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
+  try {
+    return await prisma.tipoEquipamento.findMany({
+      orderBy: {
+        nome: "asc",
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao buscar tipos de equipamento:", error);
     throw new Error("Erro ao buscar tipos de equipamento");
   }
-
-  return response.json();
 }
 
 export default async function TiposEquipamentoPage() {

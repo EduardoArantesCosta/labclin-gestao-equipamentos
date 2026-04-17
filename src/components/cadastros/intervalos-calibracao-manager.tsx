@@ -8,7 +8,7 @@ type IntervaloCalibracao = {
   nome: string;
   dias: number | null;
   ativo: boolean;
-  createdAt: string;
+  createdAt: Date;
 };
 
 type Props = {
