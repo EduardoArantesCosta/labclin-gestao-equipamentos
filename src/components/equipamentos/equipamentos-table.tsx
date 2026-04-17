@@ -55,6 +55,7 @@ function getSituacaoStyle(situacao: string) {
     case "PRÓXIMO DO VENCIMENTO":
       return "inline-flex rounded-full bg-yellow-400 px-4 py-1 text-sm font-bold text-black";
     case "CALIBRADO":
+    case "OK":
       return "inline-flex rounded-full bg-green-500 px-4 py-1 text-sm font-bold text-white";
     case "EM CALIBRAÇÃO":
       return "inline-flex rounded-full bg-blue-500 px-4 py-1 text-sm font-bold text-white";

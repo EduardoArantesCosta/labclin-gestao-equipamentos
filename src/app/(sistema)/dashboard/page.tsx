@@ -182,7 +182,11 @@ export default async function DashboardPage() {
           descricao="Equipamentos que vencem em até 30 dias"
         />
 
-        <DashboardCard titulo="OK" valor={data.ok} descricao="Equipamentos com validade em dia" />
+        <DashboardCard
+          titulo="Calibrado"
+          valor={data.ok}
+          descricao="Equipamentos com validade em dia"
+        />
 
         <DashboardCard
           titulo="Em calibração"
