@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/src/lib/prisma";
 import { NovaCalibracaoForm } from "@/src/components/calibracoes/nova-calibracao-form";
 

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/src/lib/prisma";
 import { IntervalosCalibracaoManager } from "@/src/components/cadastros/intervalos-calibracao-manager";
 

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/src/lib/prisma";
 import { EditarEquipamentoForm } from "@/src/components/equipamentos/editar-equipamento-form";
 

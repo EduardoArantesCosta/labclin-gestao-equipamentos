@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/src/lib/prisma";
 import { TiposEquipamentoManager } from "@/src/components/cadastros/tipos-equipamento-manager";
 

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/src/lib/prisma";
 import { MarcasManager } from "@/src/components/cadastros/marcas-manager";
 

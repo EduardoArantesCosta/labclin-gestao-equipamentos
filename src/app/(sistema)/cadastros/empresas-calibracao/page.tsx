@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/src/lib/prisma";
 import { EmpresasCalibracaoManager } from "@/src/components/cadastros/empresas-calibracao";
 

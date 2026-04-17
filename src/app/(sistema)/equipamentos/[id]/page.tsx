@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Fragment } from "react";
 import { prisma } from "@/src/lib/prisma";
 
