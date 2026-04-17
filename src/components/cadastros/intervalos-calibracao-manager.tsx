@@ -70,10 +70,10 @@ export function IntervalosCalibracaoManager({ initialIntervalos }: Props) {
         return;
       }
 
+      setIntervalos((prev) => [data, ...prev]);
       setNome("");
       setDias("");
       setEditandoId(null);
-      router.refresh();
     } catch {
       setErro("Erro ao salvar intervalo");
     } finally {
