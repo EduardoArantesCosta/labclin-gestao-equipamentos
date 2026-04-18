@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { bucketName, s3 } from "@/src/lib/storage";
+import { getStorageConfig } from "@/src/lib/storage";
 
 function sanitizeFileName(fileName: string) {
   return fileName
@@ -12,6 +12,8 @@ function sanitizeFileName(fileName: string) {
 
 export async function POST(request: Request) {
   try {
+    const { s3, bucketName } = getStorageConfig();
+
     const body = await request.json();
 
     const fileName = String(body.fileName || "");
