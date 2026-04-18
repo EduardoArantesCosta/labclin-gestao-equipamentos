@@ -28,8 +28,6 @@ export async function GET() {
 
       if (equipamento.statusOperacional === "EM_CALIBRACAO") {
         situacao = "EM CALIBRACAO";
-      } else if (!ultimaCalibracao) {
-        situacao = "EM CALIBRAÇÃO";
       } else {
         const dataValidade = new Date(ultimaCalibracao.dataValidade);
 
@@ -41,8 +39,10 @@ export async function GET() {
 
           if (diferencaEmDias <= 30) {
             situacao = "PROXIMO DO VENCIMENTO";
-          } else {
+          } else if (diferencaEmDias > 30) {
             situacao = "CALIBRADO";
+          } else {
+            situacao = "EM CALIBRAÇÃO";
           }
         }
       }
