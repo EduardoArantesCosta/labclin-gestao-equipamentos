@@ -90,21 +90,24 @@ model Equipamento {
 }
 
 model Calibracao {
-  id                Int                @id @default(autoincrement())
-  dataCalibracao    DateTime
-  dataValidade      DateTime
-  numeroCertificado String             @unique
-  createdAt         DateTime           @default(now())
-  certificadoUrl    String?
-  certificadoNome   String?
-  equipamentoId     Int
-  empresaId         Int
+  id                 Int       @id @default(autoincrement())
+  dataCalibracao     DateTime
+  dataValidade       DateTime
+  numeroCertificado  String    @unique
 
-  equipamento       Equipamento        @relation(fields: [equipamentoId], references: [id])
-  empresa           EmpresaCalibracao  @relation(fields: [empresaId], references: [id])
-  leituras          LeituraCalibracao[]
+  certificadoKey       String?
+  certificadoNome      String?
+  certificadoMimeType  String?
+  certificadoTamanho   Int?
 
-  @@map("calibracoes")
+  createdAt          DateTime  @default(now())
+
+  equipamentoId      Int
+  empresaId          Int
+
+  equipamento        Equipamento         @relation(fields: [equipamentoId], references: [id])
+  empresa            EmpresaCalibracao   @relation(fields: [empresaId], references: [id])
+  leituras           LeituraCalibracao[]
 }
 
 model LeituraCalibracao {
