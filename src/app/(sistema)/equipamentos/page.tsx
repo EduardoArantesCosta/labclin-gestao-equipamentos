@@ -67,7 +67,7 @@ async function getEquipamentos(): Promise<Equipamento[]> {
     return equipamentos.map((equipamento) => {
       const ultima = equipamento.calibracoes[0] ?? null;
 
-      let situacao = "OK";
+      let situacao = "AGUARDANDO_CALIBRACAO";
 
       if (equipamento.statusOperacional === "EM_CALIBRACAO") {
         situacao = "EM_CALIBRACAO";
