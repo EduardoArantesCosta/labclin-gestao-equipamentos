@@ -24,7 +24,7 @@ export async function GET() {
       const ultimaCalibracao = equipamento.calibracoes[0];
       const hoje = new Date();
 
-      let situacao = "OK";
+      let situacao = undefined;
 
       if (equipamento.statusOperacional === "EM_CALIBRACAO") {
         situacao = "EM CALIBRACAO";
