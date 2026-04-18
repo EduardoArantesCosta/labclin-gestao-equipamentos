@@ -27,9 +27,9 @@ export async function GET() {
       let situacao = "OK";
 
       if (equipamento.statusOperacional === "AGUARDANDO_CALIBRACAO") {
-        situacao = "AGUARDANDO CALIBRAÇÃO";
+        situacao = "AGUARDANDO CALIBRACAO";
       } else if (equipamento.statusOperacional === "EM_CALIBRACAO") {
-        situacao = "EM CALIBRAÇÃO";
+        situacao = "EM CALIBRACAO";
       } else if (!ultimaCalibracao) {
         situacao = "AGUARDANDO CALIBRACAO";
       } else {
