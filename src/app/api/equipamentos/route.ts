@@ -24,12 +24,12 @@ export async function GET() {
       const ultimaCalibracao = equipamento.calibracoes[0];
       const hoje = new Date();
 
-      let situacao = undefined;
+      let situacao = "EM CALIBRAÇÃO";
 
       if (equipamento.statusOperacional === "EM_CALIBRACAO") {
         situacao = "EM CALIBRACAO";
       } else if (!ultimaCalibracao) {
-        situacao = "VENCIDO";
+        situacao = "EM CALIBRAÇÃO";
       } else {
         const dataValidade = new Date(ultimaCalibracao.dataValidade);
 
