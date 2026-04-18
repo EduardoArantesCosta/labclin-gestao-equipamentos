@@ -24,14 +24,14 @@ export async function GET() {
       const ultimaCalibracao = equipamento.calibracoes[0];
       const hoje = new Date();
 
-      let situacao = "EM CALIBRAÇÃO";
+      let situacao = "OK";
 
-      if (equipamento.statusOperacional === "EM_CALIBRACAO") {
-        situacao = "EM CALIBRACAO";
-      } else if (equipamento.statusOperacional === "AGUARDANDO_CALIBRACAO") {
-        situacao = "AGUARDANDO CALIBRACAO";
-      } else if (!ultimaCalibracao) {
+      if (equipamento.statusOperacional === "AGUARDANDO_CALIBRACAO") {
         situacao = "AGUARDANDO CALIBRAÇÃO";
+      } else if (equipamento.statusOperacional === "EM_CALIBRACAO") {
+        situacao = "EM CALIBRAÇÃO";
+      } else if (!ultimaCalibracao) {
+        situacao = "AGUARDANDO CALIBRACAO";
       } else {
         const dataValidade = new Date(ultimaCalibracao.dataValidade);
 

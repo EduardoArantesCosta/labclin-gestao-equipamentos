@@ -56,7 +56,7 @@ export function NovoEquipamentoForm({ tipos, marcas, intervalos }: Props) {
           numeroSerie,
           localizacao,
           observacao,
-          statusOperacional,
+          statusOperacional: "AGUARDANDO_CALIBRACAO",
           limiteErro: Number(limiteErro),
           tipoId: Number(tipoId),
           marcaId: Number(marcaId),

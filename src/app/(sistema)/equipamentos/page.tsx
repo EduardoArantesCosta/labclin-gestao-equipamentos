@@ -69,20 +69,27 @@ async function getEquipamentos(): Promise<Equipamento[]> {
 
       let situacao = "OK";
 
-      if (equipamento.statusOperacional === "EM_CALIBRACAO") {
-        situacao = "EM_CALIBRACAO";
-      } else if (ultima?.dataValidade) {
-        const validade = new Date(ultima.dataValidade);
+      let situacao = "OK";
 
-        if (validade < hoje) {
+      if (equipamento.statusOperacional === "AGUARDANDO_CALIBRACAO") {
+        situacao = "AGUARDANDO CALIBRACAO";
+      } else if (equipamento.statusOperacional === "EM_CALIBRACAO") {
+        situacao = "EM CALIBRACAO";
+      } else if (!ultimaCalibracao) {
+        situacao = "AGUARDANDO CALIBRACAO";
+      } else {
+        const dataValidade = new Date(ultimaCalibracao.dataValidade);
+
+        if (dataValidade < hoje) {
           situacao = "VENCIDO";
         } else {
-          const diasRestantes = Math.ceil(
-            (validade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24),
-          );
+          const diferencaEmMs = dataValidade.getTime() - hoje.getTime();
+          const diferencaEmDias = Math.ceil(diferencaEmMs / (1000 * 60 * 60 * 24));
 
-          if (diasRestantes <= 30) {
-            situacao = "PROXIMO_DO_VENCIMENTO";
+          if (diferencaEmDias <= 30) {
+            situacao = "PROXIMO DO VENCIMENTO";
+          } else {
+            situacao = "CALIBRADO";
           }
         }
       }
