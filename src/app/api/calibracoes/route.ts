@@ -49,7 +49,6 @@ export async function POST(request: Request) {
     const arquivo = formData.get("certificado") as File | null;
 
     let certificadoNome: string | null = null;
-    let certificadoUrl: string | null = null;
 
     // 👇 aqui entra o arquivo
     if (arquivo && arquivo.size > 0) {
@@ -64,8 +63,6 @@ export async function POST(request: Request) {
 
       const fs = await import("fs/promises");
       await fs.writeFile(path, buffer);
-
-      certificadoUrl = `/uploads/${fileName}`;
     }
 
     // ================= VALIDAÇÕES =================
@@ -135,7 +132,6 @@ export async function POST(request: Request) {
     const leiturasCalculadas = leituras.map((leitura) => {
       const leituraPadrao = Number(leitura.leituraPadrao);
       const leituraInstrumento = Number(leitura.leituraInstrumento);
-
       const erroEncontrado = leituraInstrumento - leituraPadrao;
       const toleranciaMinima = leituraPadrao - limiteErro;
       const toleranciaMaxima = leituraPadrao + limiteErro;
@@ -163,7 +159,6 @@ export async function POST(request: Request) {
           equipamentoId,
           empresaId,
           certificadoNome,
-          certificadoUrl,
           leituras: {
             create: leiturasCalculadas,
           },
